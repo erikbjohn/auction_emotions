@@ -1,0 +1,179 @@
+---
+title: "README: auction_emotions data"
+author: "Erik Johnson"
+date: "5/11/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(stringr)
+library(knitr)
+library(ggplot2)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data 
+
+```{r description}
+```
+
+Data comes from experiments and is available in `~/Dropbox/pkg.data/auction_emotions/`.  There are 8 sessions in the folder. Also include some other information here.
+
+## Work
+
+This is the function used to aggregate the dutch auction results. 
+
+* Need to incorporate Cary's edits into this code. For now use the final data file (TickDataFull.csv)
+
+```{r dutch_agg, echo=FALSE, eval=FALSE}
+source('R/dutch_datawork.R')
+```
+
+## Description
+
+Column and data description from \textbf{TickDataFull.csv}
+
+```{r dutch_description, echo=FALSE, eval=TRUE}
+dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/TickDataFull.csv'))
+dt_descrip <- data.table(name =names(dt))
+dt_descrip <- dt_descrip[name=='V1', descrip:='Not sure']
+
+dt_descrip <- dt_descrip[name=='tick_id', descrip:='clock tick id. starts at 1 and counts up']
+dt_descrip <- dt_descrip[name=='tick_id', vals:= paste0(paste0(sort(unique(dt$tick_id))[1:6], collapse = ','), ',...,', max(sort(unique(dt$tick_id))))]
+
+
+dt_descrip <- dt_descrip[name=='time_floor', descrip:='starting time for the tick']
+dt_descrip <- dt_descrip[name=='time_floor', vals:= paste0(unlist(range(sort(dt$time_floor[!is.na(dt$time_floor)]))), collapse=',...,')]
+
+dt_descrip <- dt_descrip[name=='time_ceil', descrip:='ending time for the tick']
+dt_descrip <- dt_descrip[name=='time_ceil', vals:= paste0(unlist(range(sort(dt$time_ceil[!is.na(dt$time_ceil)]))), collapse=',...,')]
+
+dt_descrip <- dt_descrip[name=='event', descrip:='Not sure. How is this different than session?']
+dt_descrip <- dt_descrip[name=='event', vals:= paste0(paste0(head(unique(dt$event))[1:3], collapse = ','),',...,', 
+                                                      paste0(tail(unique(dt$event))[1:3], collapse = ','))]
+
+dt_descrip <- dt_descrip[name=='participant_id', descrip:='Only unique within session. For full unique use subjects']
+dt_descrip <- dt_descrip[name=='participant_id', vals:=paste0(paste0(unlist(head(unique(dt$participant_id)))[1:3], collapse=', '), ',...,', 
+                                                              paste0(unlist(tail(unique(dt$participant_id)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='esi_key', descrip:='Related to session???']
+dt_descrip <- dt_descrip[name=='esi_key', vals:=paste0(paste0(unlist(head(unique(dt$esi_key)))[1:2], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$esi_key)))[5:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Ses_temps', descrip:='Just like Ses_TickData but with NAs']
+dt_descrip <- dt_descrip[name=='Ses_temps', vals:=paste0(paste0(unlist(head(unique(dt$Ses_temps)))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$Ses_temps)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Subjects', descrip:='Not the same as participant. Unique to each subject']
+dt_descrip <- dt_descrip[name=='Subjects', vals:=paste0(paste0(unlist(head(unique(dt$Subjects)))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$Subjects)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='DANum', descrip:='Dutch Auction Number(event)']
+dt_descrip <- dt_descrip[name=='DANum', vals:=paste0(paste0(unlist(head(unique(dt$DANum)))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$DANum)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Ses_TickData', descrip:='?']
+dt_descrip <- dt_descrip[name=='Ses_TickData', vals:=paste0(paste0(unlist(head(unique(dt$Ses_TickData)))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$Ses_TickData)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Group', descrip:='4 players to a group (playing against)']
+dt_descrip <- dt_descrip[name=='Group', vals:=paste0(paste0(unlist(head(unique(dt$Group)))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(unique(dt$Group)))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Win', descrip:='1 if ended up winning, 0 otherwise']
+dt_descrip <- dt_descrip[name=='Win', vals:=paste0(paste0(unlist(head(unique(dt$Win)))[1], collapse=', '), ',',
+                                                       paste0(unlist(tail(unique(dt$Win)))[2], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='FinalPrice', descrip:='Price where auction stopped']
+dt_descrip <- dt_descrip[name=='FinalPrice', vals:=paste0(paste0(unlist(head(sort(unique(dt$FinalPrice))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(dt$FinalPrice))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='ClockPrice', descrip:='Price during the tick (starts at 240)']
+dt_descrip <- dt_descrip[name=='ClockPrice', vals:=paste0(paste0(unlist(head(sort(unique(dt$ClockPrice))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(dt$ClockPrice))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Value', descrip:='Value assigned to participant']
+dt_descrip <- dt_descrip[name=='Value', vals:=paste0(paste0(unlist(head(sort(unique(dt$Value))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(dt$Value))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Diff', descrip:='Value-ClockPrice']
+dt_descrip <- dt_descrip[name=='Diff', vals:=paste0(paste0(unlist(head(sort(unique(dt$Diff))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(dt$Diff))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Neutral', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Neutral', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Neutral,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Neutral,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Happy', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Happy', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Happy,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Happy,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Sad', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Sad', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Sad,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort((unique(round(dt$Sad,3))))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Angry', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Angry', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Angry,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Angry,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Surprised', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Surprised', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Surprised,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Surprised,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Scared', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Scared', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Scared,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Scared,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Disgusted', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Disgusted', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Disgusted,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Disgusted,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Contempt', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Contempt', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Contempt,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Contempt,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Valence', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Valence', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Valence,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Valence,3)))))[4:6], collapse=', '))]
+
+dt_descrip <- dt_descrip[name=='Arousal', descrip:='Emotion Score']
+dt_descrip <- dt_descrip[name=='Arousal', vals:=paste0(paste0(unlist(head(sort(unique(round(dt$Arousal,3)))))[1:3], collapse=', '), ',...,', 
+                                                       paste0(unlist(tail(sort(unique(round(dt$Arousal,3)))))[4:6], collapse=', '))]
+
+cols_emotion <- dt_descrip[descrip=='Emotion Score']$name
+not_cols_emotion <- dt_descrip[descrip!='Emotion Score']$name
+cols <- c(not_cols_emotion, cols_emotion)
+dt_descrip <- rbindlist(list(dt_descrip[name %in% not_cols_emotion], dt_descrip[name %in% cols_emotion]))
+kable(dt_descrip)
+```
+
+## Questions
+
+1. What is the unique key for a session?
+
+2. Plot out raw data for an individual over all sessions (include initial value, and win/loss, etc.)
+
+## Analysis
+
+Draw some cool pictures. Try this for one individual (from the raw/source data)
+
+```{r oneIndividual, echo=FALSE}
+dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv'))
+dt$time_iter <- 1:nrow(dt)
+dt$Happy <- suppressWarnings(as.numeric(dt$Happy))
+dt <- dt[!is.na(Happy)]
+#dt_sub <- dt[seq(1,to = nrow(dt), by = 100)]
+plt_part2 <- ggplot(dt, aes(x=time_iter, y=Happy, colour=Event_Marker)) +
+  geom_line(show.legend = F)
+ggsave(plt_part2, file='~/Dropbox/pkg.data/auction_emotions/Figures/plot1.pdf')
+plot(plt_part2)
+```
+
+```{r oneIndividual_legend}
+
+```
+```{r data_analysis, echo=FALSE, eval=FALSE}
+source('R/data_analysis.R')
+
+```

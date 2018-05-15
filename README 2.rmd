@@ -1,0 +1,96 @@
+---
+title: "Deck Facial Auction Data"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+library(data.table)
+library(dplyr)
+library(stringr)
+library(lubridate)
+data_directory <- '~/Dropbox/Research/Deck'
+
+time_seconds_time <- function(x){
+  x_split <- stringr::str_split(x,':', simplify=TRUE)
+  hours <- as.integer(x_split[1,1])
+  minutes <- as.integer(x_split[1,2])
+  seconds <- as.numeric(x_split[1,3])
+  return(hours*360 + minutes*60 + seconds)
+}
+
+time_seconds_detail <- function(x){
+  x_split <- stringr::str_split(x,':', simplify=TRUE)
+  minutes <- as.integer(x_split[1,1])
+  seconds <- as.numeric(x_split[1,2])
+  return(minutes*60 + seconds)
+}
+```
+
+# Data work code and documentation
+
+Goal to create a similar file to TickData.csv that includes average facial emotion for every 0.5 second interval from the beginning of the auction to the end.
+
+```{r eval=TRUE, echo=TRUE}
+fList <- list.files(data_directory, full.names = TRUE)
+
+# Find first participant csv file
+# Each participant has an id. 
+# Easy to loop over all. here, we just use first participant
+participant_id <- 1
+for (participant_id in 1:1){
+  detail_file <- names(which(sapply(fList, function(x) stringr::str_detect(x, paste('Participant', participant_id))))[1])
+  esi_split <- stringr::str_split(detail_file, '-', simplify = TRUE)
+  esi_split_2 <- stringr::str_split(esi_split[3], '_', simplify=TRUE)
+  esi_key <- paste0('ESI','-',esi_split[2], '-', esi_split_2[1,1])
+  time_file <- names(which(sapply(fList, function(x) stringr::str_detect(x, esi_key)))[1])
+  l <- list()
+  dt_detail <- data.table::fread(detail_file)
+  dt_time <- data.table::fread(time_file)
+  # Format files for times
+  dt_detail$time_stamp <- sapply(dt_detail$Video_Time, time_seconds_detail, USE.NAMES=FALSE)
+  dt_time$time_stamp <- sapply(dt_time$TimecodeSession, time_seconds_time, USE.NAMES=FALSE)
+  events <- unique(dt_time$REF_MarkerName)
+  events <- events[!(events %in% c('camera start', 'undefined marker'))]
+  events_da <- events[stringr::str_detect(events, 'da')]
+  l.events <- list()
+  for (iEvent in 1:length(events_da)){
+    cat(iEvent)
+    event <- events_da[iEvent]
+    dt_detail_event <- dt_detail[Event_Marker == event]
+    dt_time_event <- dt_time[REF_MarkerName == event]
+    time_start_actual <- dt_time_event$time_stamp
+    info_event <- paste0('info', stringr::str_replace(event, 'a', ''))
+    time_end_time <- dt_time[REF_MarkerName == info_event]$time_stamp
+    time_end_detail <- max(dt_detail_event$time_stamp)
+    time_end <- max(time_end_time, time_end_detail)
+    # Break up into 0.5 second segments
+    time_floor <- seq(time_start_actual, time_end, 0.5)
+    time_ceil <- c(time_floor[2:(length(time_floor))]-0.001, time_end)
+    dt_tick <- data.table(tick_id = 1:length(time_ceil), time_floor= time_floor, time_ceil=time_ceil)
+    dt_tick$event <- event
+    dt_tick$participant_id <- participant_id
+    dt_tick$esi_key <- esi_key
+    # Cheap and easy but computationally expensive solution
+    for(iTick in 1:nrow(dt_tick)){
+      tick_detail <- dt_detail[time_stamp >= dt_tick[iTick]$time_floor & time_stamp <= dt_tick[iTick]$time_ceil & Event_Marker == event]
+      if (nrow(tick_detail)>0){
+      dt_tick <- dt_tick[iTick, Neutral := mean(as.numeric(tick_detail$Neutral))]
+      dt_tick <- dt_tick[iTick, Happy := mean(as.numeric(tick_detail$Happy))]
+      dt_tick <- dt_tick[iTick, Sad := mean(as.numeric(tick_detail$Sad))]
+      dt_tick <- dt_tick[iTick, Angry := mean(as.numeric(tick_detail$Angry))]
+      dt_tick <- dt_tick[iTick, Surprised := mean(as.numeric(tick_detail$Surprised))]
+      dt_tick <- dt_tick[iTick, Scared := mean(as.numeric(tick_detail$Scared))]
+      dt_tick <- dt_tick[iTick, Disgusted := mean(as.numeric(tick_detail$Disgusted))]
+      dt_tick <- dt_tick[iTick, Contempt := mean(as.numeric(tick_detail$Contempt))]
+      dt_tick <- dt_tick[iTick, Valence := mean(as.numeric(tick_detail$Valence))]
+      dt_tick <- dt_tick[iTick, Arousal := mean(as.numeric(tick_detail$Arousal))]
+      }
+    }
+    l.events[[iEvent]] <- dt_tick 
+  }
+  dt <- data.table::rbindlist(l.events)
+}
+
+```
