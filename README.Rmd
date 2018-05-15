@@ -165,6 +165,31 @@ ggsave(plt_part2, file='~/Dropbox/pkg.data/auction_emotions/Figures/plot1.pdf')
 plot(plt_part2)
 ```
 
+```{r oneIndividual_DA, echo=FALSE}
+#dt_sub <- dt[seq(1,to = nrow(dt), by = 100)]
+dt_da <- dt[grep('da|infod', Event_Marker)]
+plt_part3 <- ggplot(dt_da, aes(x=time_iter, y=Happy, colour=Event_Marker)) +
+  geom_line(show.legend = F)
+ggsave(plt_part3, file='~/Dropbox/pkg.data/auction_emotions/Figures/plotDA.pdf')
+plot(plt_part3)
+
+```
+
+
+```{r oneIndividual_Valence, echo=FALSE}
+#dt_sub <- dt[seq(1,to = nrow(dt), by = 100)]
+dt$Valence <- suppressWarnings(as.numeric(dt$Valence))
+dt_da <- dt[grep('da|infod', Event_Marker)]
+
+plt_part4 <- ggplot(dt_da, aes(x=time_iter, y=Valence, colour=Event_Marker)) +
+  geom_line(show.legend = F)
+ggsave(plt_part4, file='~/Dropbox/pkg.data/auction_emotions/Figures/plotDA.pdf')
+plot(plt_part4)
+
+```
+
+
+
 ```{r oneIndividual_legend}
 
 ```
@@ -178,6 +203,10 @@ source('R/data_analysis.R')
 ### What is the unique key for a session?
 
 This is defined by the session/group pair.
+
+The session and participant id are for unique individuals.
+
+The group membership for an individual will change within the session (to stop cartel behavior).
 
 ###  Plot out raw data for an individual over all sessions (include initial value, and win/loss, etc.)
 
@@ -198,3 +227,30 @@ Because subjects observe their value for the first time at the start of the auct
 Can we grab the average emotion over the time between auctions, which is when people see the results.  What we are thinking about here is if emotional reaction to the previous auction impacts bidding in the next auction. 
 
 5. Indvidiual heterogeneity in response
+
+6. How are scores done? Is it intensity 
+
+7. Some go da then fp.
+
+8. Valence
+
+The difference between highest happiness and lowest emotional state (max of good ones - max of bad ones)
+
+
+\textbf{Event Marker}
+
+finalPayment separates da and fp auction
+
+No Event Marker only time between instructions
+
+infoda1 Results of da1
+
+\textbf{Values}
+
+Values data not in the emotions file
+
+## TODO Plots
+
+Value, profit,
+
+Two colors, portion of actual auction in one color, feedback in another
