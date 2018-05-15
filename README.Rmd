@@ -148,11 +148,6 @@ dt_descrip <- rbindlist(list(dt_descrip[name %in% not_cols_emotion], dt_descrip[
 kable(dt_descrip)
 ```
 
-## Questions
-
-1. What is the unique key for a session?
-
-2. Plot out raw data for an individual over all sessions (include initial value, and win/loss, etc.)
 
 ## Analysis
 
@@ -177,3 +172,29 @@ plot(plt_part2)
 source('R/data_analysis.R')
 
 ```
+
+## Questions
+
+### What is the unique key for a session?
+
+This is defined by the session/group pair.
+
+###  Plot out raw data for an individual over all sessions (include initial value, and win/loss, etc.)
+
+Started working on this in the One Individual Section
+
+###  What is the actual research question? Do we know? What should we explore?
+
+1. Initial value assignment
+
+Because subjects observe their value for the first time at the start of the auction, can we grab the average emotion for the first second of each auction to analyze how emotions are impacted by value realization.  Any reaction would be somewhat visible in the timepath plots we discussed previously.  
+
+2. Emotional triggers for ending auction
+
+3. Fatigue/Emotional trends through repeated auctions
+
+4. Emotional responses to losing/winning auction
+
+Can we grab the average emotion over the time between auctions, which is when people see the results.  What we are thinking about here is if emotional reaction to the previous auction impacts bidding in the next auction. 
+
+5. Indvidiual heterogeneity in response
