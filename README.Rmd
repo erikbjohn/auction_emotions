@@ -1,8 +1,10 @@
 ---
-title: "README: auction_emotions data"
+title: 'README: auction_emotions data'
 author: "Erik Johnson"
 date: "5/11/2018"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -36,6 +38,7 @@ Column and data description from \textbf{TickDataFull.csv}
 
 ```{r dutch_description, echo=FALSE, eval=TRUE}
 dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/TickDataFull.csv'))
+
 dt_descrip <- data.table(name =names(dt))
 dt_descrip <- dt_descrip[name=='V1', descrip:='Not sure']
 
@@ -218,6 +221,7 @@ Started working on this in the One Individual Section
 
 Because subjects observe their value for the first time at the start of the auction, can we grab the average emotion for the first second of each auction to analyze how emotions are impacted by value realization.  Any reaction would be somewhat visible in the timepath plots we discussed previously.  
 
+
 2. Emotional triggers for ending auction
 
 3. Fatigue/Emotional trends through repeated auctions
@@ -234,8 +238,24 @@ Can we grab the average emotion over the time between auctions, which is when pe
 
 8. Valence
 
+
 The difference between highest happiness and lowest emotional state (max of good ones - max of bad ones)
 
+9. \textit{Can we use emotion to explain bid amount?}
+
+10. Pull the trigger (why)
+
+11. Do emotions spillover? (Maybe add this into the analysis in 12.)
+
+12. Subjects learn value at start of auction. Does this affect emotional response (value realization affect).
+
+## Differences between dutch auctions and fp Auctions
+
+13. Is there a difference in emotions between first price and dutch auctions (spillover effect.. does happiness differ between first price and dutch auctions)
+
+14. Expect emotions to be changing more in a dutch auction more than first price auction. Emotions more extreme in dutch auctions, less in first price auctions. Expect to see.
+
+15. Plot the same things for arousal (measure of intensity)
 
 \textbf{Event Marker}
 
@@ -251,6 +271,143 @@ Values data not in the emotions file
 
 ## TODO Plots
 
+```{r create_participant2}
+source('R/lube_time.R')
+source('R/split_time_hours_check.R')
+dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv'))
+dt$time_iter <- 1:nrow(dt)
+SplitTimes <- stringr::str_split(dt$Video_Time, ':')
+l_times <- lapply(SplitTimes, split_time_hours_check)
+dt$dt_video_time <- do.call('c', l_times)
+dt <- dt[, dummy := dt_video_time]
+setkey(dt, dummy, dt_video_time)
+# Fill dt that does not have data with event assignment
+dt_events_actual <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/ESI-115-02.csv'))
+setnames(dt_events_actual, 'REF_MarkerName', 'Event_Marker')
+SplitTimes <- stringr::str_split(dt_events_actual$TimecodeSession, ':')
+dt_events_actual$l_hours <- as.numeric(sapply(SplitTimes, '[[', 1))
+dt_events_actual$l_minutes <- as.numeric(sapply(SplitTimes, '[[', 2))
+dt_events_actual$l_seconds <- as.numeric(sapply(SplitTimes, '[[', 3))
+start_times <- sapply(1:nrow(dt_events_actual), function(x) lube_time(dt_events_actual[x]), simplify = FALSE)
+dt_events_actual$dt_start_time <- do.call('c', start_times)                                          
+dt_events_actual <- dt_events_actual[, dt_end_time := lead(dt_start_time,1)]
+dt_events_actual[nrow(dt_events_actual)]$dt_end_time <- max(dt_events_actual[nrow(dt_events_actual)]$dt_start_time,
+                                                            max(dt$dt_video_time))
+# join to dt
+dt_events <- dt_events_actual[, .(Event_Marker_actual = Event_Marker, dt_start_time, dt_end_time)]
+setkey(dt_events, dt_start_time, dt_end_time)
+
+#### HAVE WEIRD ISSUE HERE 
+dt <- foverlaps(dt, dt_events) 
+#(Run head(dt[, .SD[.N], by=Event_Marker_fixed]), (fpi2... at 32 minutes)
+dt_fill <- copy(dt)
+dt_fill$Event_Marker_fixed <- dt_fill$Event_Marker
+dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
+
+dt_fill <- dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker') &
+                     !(Event_Marker_actual %in% 'undefined marker'),
+                   Event_Marker_fixed := Event_Marker_actual]
+
+dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
+dt_fill$Event_Marker_lead <- lead(dt_fill$Event_Marker_fixed)
+dt_fill <- dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker'), Event_Marker_fixed := Event_Marker_lead]
+dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
+
+if(nrow(dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker')])>0){
+  cat('Event Marker not clean')
+  break
+}
+
+setkey(dt_fill, Event_Marker_actual, Event_Marker)
+setkey(dt, Event_Marker_actual, Event_Marker)
+
+dt <- dt_fill[dt]
+dt <- dt[order(dt_video_time)] 
+
+# CHECK SINCE fpi 2 seems to be discontinous
+time_check <- dt[, .SD[.N], by=Event_Marker_fixed][,.(Event_Marker_fixed, Event_Marker, Event_Marker_actual, dt_video_time)]
+
+
+dt <- dt[, .(dt_video_time, Event_Marker=Event_Marker_fixed, Neutral, Happy, Sad, Angry, Surprised, Scared, Disgusted, 
+             Contempt, Valence, Arousal, Stimulus)]
+dt <- as.data.table(tidyr::gather(dt, key=EmotionType, value=Score, -c(dt_video_time, Event_Marker, Stimulus)))
+dt$Score <- suppressWarnings(as.numeric(dt$Score))
+
+# Create marker type flags
+regex_infoFlag <- '(i[0-9]{1,2}(?=$)|info)'
+dt <- dt[stringr::str_detect(Event_Marker, regex_infoFlag), MarkerType:='info']
+regex_auctionFlag <- '(fpa|da)'
+dt <- dt[stringr::str_detect(Event_Marker, regex_auctionFlag), MarkerType:='auction']
+dt <- dt[grep('finalpayment', Event_Marker), MarkerType:='final payment']
+dt <- dt[grep('camera start', Event_Marker), MarkerType:='camera start']
+
+# Create auction type flags
+regex_dutch <- '(?i)(da|infod)' #da1 infod1
+regex_fp <- '(?i)fp' #fpa1, fpi1
+dt <- dt[stringr::str_detect(Event_Marker, regex_dutch), AuctionType:='Dutch']
+dt <- dt[stringr::str_detect(Event_Marker, regex_fp), AuctionType:='First Price']
+
+# Create auction number 
+dt <- dt[, AuctionNumber:=stringr::str_extract(Event_Marker, '[0-9]{1,2}(?=$)')]
+
+# Next, pull in information on if they won
+
+
+# Create Grid of types
+auction_types <- unique(dt[!is.na(AuctionType)]$AuctionType)
+emotion_types <- c('Valence', 'Arousal')
+type_grid <- data.table(expand.grid(AuctionType=auction_types, EmotionType=emotion_types, stringsAsFactors = FALSE))
+auction_grid <- data.table(start=1:23, end=3:25)
+
+l_grid <- list()
+for(i_type in 1:nrow(type_grid)){
+  l_grid[[i_type]] <- cbind(type_grid[i_type], auction_grid)
+}
+dt_grid <- rbindlist(l_grid)
+
+l <- list()
+for(i_comb in 1:nrow(dt_grid)){
+  auction_type <- dt_grid[i_comb]$AuctionType
+  emotion_type <- dt_grid[i_comb]$EmotionType
+  row_start <- dt_grid[i_comb]$start
+  row_end <- dt_grid[i_comb]$end
+  rows_range <- row_start:row_end
+  dt_plot <- dt[AuctionType==auction_type & EmotionType==emotion_type][AuctionNumber %in% rows_range]
+  dt_time_breaks <- dt_plot[, .SD[1], by=AuctionNumber]
+  dt_marker_colors <- data.table(MarkerType=c("auction", "info","final payment"),
+                                 Colors=c('#024fcc', '#e8c502', '#00c420'))
+  ggplot(dt_plot, aes(dt_video_time, Score, colour=as.factor(MarkerType)))+
+    geom_line(aes(group=1), size=0.3, show.legend = F)  +
+    scale_colour_manual(breaks = dt_marker_colors$MarkerType, 
+                        values = dt_marker_colors$Colors)+
+    geom_vline(xintercept=dt_time_breaks$dt_video_time, linetype=2, size=0.3)+ # Dashed game breaks
+      scale_x_discrete(name="Auction Number",
+                       limits=dt_time_breaks$dt_video_time,
+                       labels=dt_time_breaks$AuctionNumber) +
+    theme_bw() +
+    labs(y=paste(emotion_type, 'Score'))
+    
+    
+```
+
 Value, profit,
 
+Focus on valence and arousal, both dutch and fp (4 total figures)
+
 Two colors, portion of actual auction in one color, feedback in another
+
+Dutch Auction: Magnitude of the win (if win, dot at end of segment that is solid if win open if loss, 
+size for (Price) value-final price at end time (if negative red if positive black))
+
+FP Auction: Value-Bid (same colors as before) 
+
+x-axis (should be start of auction start)
+
+Auction line blue (lettering from grey poupon), info (Grey Popon) dijon mustard color.
+
+Value line is green value normalized between 0 and 1
+
+Final Price : normalized to 0 and 1, black
+
+
+Create summary statistics for timepath options
