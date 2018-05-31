@@ -271,65 +271,24 @@ Values data not in the emotions file
 
 ## TODO Plots
 
-```{r create_participant2}
+```{r participant}
 source('R/lube_time.R')
+source('R/events.R')
+source('R/payoffs.R')
 source('R/split_time_hours_check.R')
-dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv'))
-dt$time_iter <- 1:nrow(dt)
-SplitTimes <- stringr::str_split(dt$Video_Time, ':')
-l_times <- lapply(SplitTimes, split_time_hours_check)
-dt$dt_video_time <- do.call('c', l_times)
-dt <- dt[, dummy := dt_video_time]
-setkey(dt, dummy, dt_video_time)
-# Fill dt that does not have data with event assignment
-dt_events_actual <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/ESI-115-02.csv'))
-setnames(dt_events_actual, 'REF_MarkerName', 'Event_Marker')
-SplitTimes <- stringr::str_split(dt_events_actual$TimecodeSession, ':')
-dt_events_actual$l_hours <- as.numeric(sapply(SplitTimes, '[[', 1))
-dt_events_actual$l_minutes <- as.numeric(sapply(SplitTimes, '[[', 2))
-dt_events_actual$l_seconds <- as.numeric(sapply(SplitTimes, '[[', 3))
-start_times <- sapply(1:nrow(dt_events_actual), function(x) lube_time(dt_events_actual[x]), simplify = FALSE)
-dt_events_actual$dt_start_time <- do.call('c', start_times)                                          
-dt_events_actual <- dt_events_actual[, dt_end_time := lead(dt_start_time,1)]
-dt_events_actual[nrow(dt_events_actual)]$dt_end_time <- max(dt_events_actual[nrow(dt_events_actual)]$dt_start_time,
-                                                            max(dt$dt_video_time))
-# join to dt
-dt_events <- dt_events_actual[, .(Event_Marker_actual = Event_Marker, dt_start_time, dt_end_time)]
-setkey(dt_events, dt_start_time, dt_end_time)
 
-#### HAVE WEIRD ISSUE HERE 
-dt <- foverlaps(dt, dt_events) 
-#(Run head(dt[, .SD[.N], by=Event_Marker_fixed]), (fpi2... at 32 minutes)
-dt_fill <- copy(dt)
-dt_fill$Event_Marker_fixed <- dt_fill$Event_Marker
-dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
+dt_events <- events('~/Dropbox/pkg.data/auction_emotions/Raw/session1/ESI-115-02.csv')
+dt_emotions <- emotions('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv')
+dt_payoffs <- payoffs()
 
-dt_fill <- dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker') &
-                     !(Event_Marker_actual %in% 'undefined marker'),
-                   Event_Marker_fixed := Event_Marker_actual]
+# Make sure that total event time match toal emotion time (emotions record for longer duration than events)
+dt_events <- dt_events[nrow(dt_events), event_end:= dt_emotions[nrow(dt_emotions)]$snap_end]
 
-dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
-dt_fill$Event_Marker_lead <- lead(dt_fill$Event_Marker_fixed)
-dt_fill <- dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker'), Event_Marker_fixed := Event_Marker_lead]
-dt_fill <- unique(dt_fill[, .(Event_Marker_actual, Event_Marker, Event_Marker_fixed)])
-
-if(nrow(dt_fill[Event_Marker_fixed %in% c('FIT_FAILED', 'FIND_FAILED', 'No Event Marker')])>0){
-  cat('Event Marker not clean')
-  break
-}
-
-setkey(dt_fill, Event_Marker_actual, Event_Marker)
-setkey(dt, Event_Marker_actual, Event_Marker)
-
-dt <- dt_fill[dt]
-dt <- dt[order(dt_video_time)] 
-
-# CHECK SINCE fpi 2 seems to be discontinous
-time_check <- dt[, .SD[.N], by=Event_Marker_fixed][,.(Event_Marker_fixed, Event_Marker, Event_Marker_actual, dt_video_time)]
+setkey(dt_events, event_start, event_end)
+setkey(dt_emotions, snap_start, snap_end)
+dt <- foverlaps(dt_events, dt_emotions) 
 
 
-dt <- dt[, .(dt_video_time, Event_Marker=Event_Marker_fixed, Neutral, Happy, Sad, Angry, Surprised, Scared, Disgusted, 
-             Contempt, Valence, Arousal, Stimulus)]
 dt <- as.data.table(tidyr::gather(dt, key=EmotionType, value=Score, -c(dt_video_time, Event_Marker, Stimulus)))
 dt$Score <- suppressWarnings(as.numeric(dt$Score))
 
