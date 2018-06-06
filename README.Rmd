@@ -17,20 +17,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Data 
 
-```{r description}
-```
+There are three data types used.
 
-Data comes from experiments and is available in `~/Dropbox/pkg.data/auction_emotions/`.  There are 8 sessions in the folder. Also include some other information here.
+1) payoffs: Comes from excel files. Contains bid amounts, awards, etc for each auction
+2) events: 
 
-## Work
 
-This is the function used to aggregate the dutch auction results. 
-
-* Need to incorporate Cary's edits into this code. For now use the final data file (TickDataFull.csv)
-
-```{r dutch_agg, echo=FALSE, eval=FALSE}
-source('R/dutch_datawork.R')
-```
 
 ## Description
 
@@ -275,22 +267,45 @@ Values data not in the emotions file
 source('R/lube_time.R')
 source('R/events.R')
 source('R/payoffs.R')
+source('R/emotions.R')
 source('R/split_time_hours_check.R')
 
-dt_events <- events('~/Dropbox/pkg.data/auction_emotions/Raw/session1/ESI-115-02.csv')
-dt_emotions <- emotions('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv')
-dt_payoffs <- payoffs()
+# First, join emotions to events
+emotions_events_location <- '~/Dropbox/pkg.data/auction_emotions/Raw/emotions_events.rds'
+if(!file.exists(emotions_events_location)){
+  events_files <- list.files('~/Dropbox/pkg.data/auction_emotions/Raw/', pattern='^ESI.+[0-9]{1,1}\\.csv', full.names = TRUE, recursive = TRUE)#session1/ESI-115-02.csv'
+  l_events <- lapply(events_files, events)
+  dt_events <- rbindlist(l_events, use.names = TRUE, fill = TRUE)
+  
+  emotions_files <- list.files('~/Dropbox/pkg.data/auction_emotions/Raw/', pattern='detailed.csv', full.names = TRUE, recursive = TRUE)
+  l_emotions <- lapply(emotions_files, emotions)
+  dt_emotions <- rbindlist(l_emotions, use.names=TRUE, fill=TRUE)
+  
+  # Make sure that total event time match toal emotion time (emotions record for longer duration than events)
+  dt_events <- dt_events[nrow(dt_events), event_end:= dt_emotions[nrow(dt_emotions)]$snap_end]
+  
+  setkey(dt_events, Session, Participant, event_start, event_end)
+  setkey(dt_emotions, Session, Participant, snap_start, snap_end)
+  dt <- foverlaps(dt_events, dt_emotions) 
+  dt <- dt[, .(Session, Participant, snap_start, snap_end, event_start, event_end, AuctionType, AuctionNumber, MarkerType,
+               Neutral, Happy, Sad, Angry, Surprised, Scared, Disgusted, Contempt, Valence, Arousal, Stimulus)]
+  dt <- as.data.table(tidyr::gather(dt, key=EmotionType, value=Score,
+                                    -c(Session, Participant, snap_start, snap_end, event_start, event_end,
+                                       AuctionType, AuctionNumber, MarkerType)))
+  dt$Score_num <- suppressWarnings(as.numeric(dt$Score))
+  dt_payoffs <- payoffs()
+  setkey(dt, Session, AuctionType, AuctionNumber, Participant)
+  setkey(dt_payoffs, Session, AuctionType, AuctionNumber, Participant)
+  dt <- dt[dt_payoffs]
+  saveRDS(dt, emotions_events_location)
+} else {
+  dt <- readRDS(emotions_events_location)
+}
 
-# Make sure that total event time match toal emotion time (emotions record for longer duration than events)
-dt_events <- dt_events[nrow(dt_events), event_end:= dt_emotions[nrow(dt_emotions)]$snap_end]
-
-setkey(dt_events, event_start, event_end)
-setkey(dt_emotions, snap_start, snap_end)
-dt <- foverlaps(dt_events, dt_emotions) 
+# Join emotions-events to payoffs
 
 
-dt <- as.data.table(tidyr::gather(dt, key=EmotionType, value=Score, -c(dt_video_time, Event_Marker, Stimulus)))
-dt$Score <- suppressWarnings(as.numeric(dt$Score))
+
 
 # Create marker type flags
 regex_infoFlag <- '(i[0-9]{1,2}(?=$)|info)'

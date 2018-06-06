@@ -1,10 +1,13 @@
 events <- function(file_location){
   source('R/lube_time.R')
   source('R/extract_marker_info.R')
+  library(data.table)
+  library(lubridate)
+  library(dplyr)
   # file_location <- '~/Dropbox/pkg.data/auction_emotions/Raw/session1/ESI-115-02.csv'
   dt <- suppressWarnings(fread(file_location))
   SplitTimes <- stringr::str_split(dt$TimecodeSession, ':')
-  dt_events_actual$l_hours <- as.numeric(sapply(SplitTimes, '[[', 1))
+  dt_events_actual = data.table(l_hours = as.numeric(sapply(SplitTimes, '[[', 1)))
   dt_events_actual$l_minutes <- as.numeric(sapply(SplitTimes, '[[', 2))
   dt_events_actual$l_seconds <- as.numeric(sapply(SplitTimes, '[[', 3))
   start_times <- sapply(1:nrow(dt_events_actual), function(x) lube_time(dt_events_actual[x]), simplify = FALSE)
@@ -53,6 +56,12 @@ events <- function(file_location){
   dt$event_start <- as.numeric(seconds(dt$dt_start_time-sec_start))
   dt$event_end <- as.numeric(seconds(dt$dt_end_time-sec_start))
   dt <- dt[,.(event_start, event_end, AuctionType, AuctionNumber, MarkerType)]
+  
+  # Include Session, Participant
+  dt$Session <- stringr::str_extract(file_location, stringr::regex('(?<=session)[0-9]{1,2}', perl=TRUE))
+  dt$Participant <- stringr::str_extract(file_location, stringr::regex('[0-9]{1,2}(?=\\.csv)'))
+  dt$Participant <- stringr::str_replace(dt$Participant, stringr::regex('0(?=[0-9]{1,1}$)'), '')
+  return(dt)
 }
 
 

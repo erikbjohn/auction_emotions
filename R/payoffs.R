@@ -67,7 +67,7 @@ payoffs <- function(){
    }else {
     dt <- readRDS(payoffs_location)
    }
-   return(l)
+   return(dt)
 } 
 
 extract_subjects <- function(lines_x){
