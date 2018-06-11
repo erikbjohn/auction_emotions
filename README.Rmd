@@ -266,7 +266,7 @@ dt <- build_events_emotions_payoffs()
 dt_payoffs <- payoffs()
 dt_participants <- unique(dt[, .(Session, Participant)])
 
-dutch_money_breaks <- data.table(t_begin = seq(0,1000, 1), t_end=seq(1, 1001, 1))
+dutch_money_breaks <- data.table(t_begin = seq(0,1000, 0.5), t_end=seq(0.5, 1000.5, 0.5))
 dutch_money_breaks$step <- 0:(nrow(dutch_money_breaks)-1)
 dutch_money_breaks <- dutch_money_breaks[, dollars:=240-step*3]
 dutch_money_breaks <- dutch_money_breaks[dollars >= 0]
@@ -279,7 +279,8 @@ for(i_participant in 1:nrow(dt_participants)){
   # Create Grid of types
   # auction_types <- unique(dt_part[!is.na(AuctionType)]$AuctionType)
   auction_types <- 'dutch'
-  emotion_types <- c('Valence', 'Arousal', 'Happy', 'Angry', 'Contempt', 'Disgusted', 'Neutral', 'Sad', 'Scared', 'Stimulus', 'Surprised')
+  #emotion_types <- c('Valence', 'Arousal', 'Happy', 'Angry', 'Contempt', 'Disgusted', 'Neutral', 'Sad', 'Scared', 'Stimulus', 'Surprised')
+  emotion_types <- 'Contempt'
   dt_grid <- data.table(expand.grid(AuctionType=auction_types, EmotionType=emotion_types, stringsAsFactors = FALSE))
   for (i_comb in 1:nrow(dt_grid)){
     cat(i_comb)
@@ -320,7 +321,7 @@ for(i_participant in 1:nrow(dt_participants)){
     # Find in the money
     if(auction_type=='dutch'){
       # Create cum time by auction number
-      dt_auction_start <- dt_plot[MarkerType=='auction', .SD[1], by=AuctionNumber][,.(AuctionNumber, auction_start = snap_start)]
+      dt_auction_start <- dt_plot[MarkerType=='auction', .SD[1], by=AuctionNumber][,.(AuctionNumber, auction_start = event_start)]
       setkey(dt_auction_start, AuctionNumber)
       setkey(dt_plot, AuctionNumber)
       dt_dutch <- dt_auction_start[dt_plot]
