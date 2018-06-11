@@ -13,6 +13,8 @@ library(stringr)
 library(knitr)
 library(ggplot2)
 knitr::opts_chunk$set(echo = TRUE)
+source_files<- list.files(path = '~/Documents/Github/auction_emotions/R', recursive = TRUE, full.names = TRUE)
+tmp <- lapply(source_files, source)
 ```
 
 # Data 
@@ -29,7 +31,7 @@ There are three data types used.
 Column and data description from \textbf{TickDataFull.csv}
 
 ```{r dutch_description, echo=FALSE, eval=TRUE}
-dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/TickDataFull.csv'))
+dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/TickDataFul\l.csv'))
 
 dt_descrip <- data.table(name =names(dt))
 dt_descrip <- dt_descrip[name=='V1', descrip:='Not sure']
@@ -147,7 +149,7 @@ kable(dt_descrip)
 ## Analysis
 
 Draw some cool pictures. Try this for one individual (from the raw/source data)
-
+tmp <- 
 ```{r oneIndividual, echo=FALSE}
 dt <- suppressWarnings(fread('~/Dropbox/pkg.data/auction_emotions/Raw/session1/Participant 2_ESI-115-02_Analysis 1_video_20170802_162439_detailed.csv'))
 dt$time_iter <- 1:nrow(dt)
@@ -155,7 +157,7 @@ dt$Happy <- suppressWarnings(as.numeric(dt$Happy))
 dt <- dt[!is.na(Happy)]
 #dt_sub <- dt[seq(1,to = nrow(dt), by = 100)]
 plt_part2 <- ggplot(dt, aes(x=time_iter, y=Happy, colour=Event_Marker)) +
-  geom_line(show.legend = F)
+  geom_line(show.legend = F)0
 ggsave(plt_part2, file='~/Dropbox/pkg.data/auction_emotions/Figures/plot1.pdf')
 plot(plt_part2)
 ```
@@ -184,14 +186,10 @@ plot(plt_part4)
 ```
 
 
-
-```{r oneIndividual_legend}
-
+```{r build_events_emotions_payoffs}
+dt <- build_events_emotions_payoffs()
 ```
-```{r data_analysis, echo=FALSE, eval=FALSE}
-source('R/data_analysis.R')
 
-```
 
 ## Questions
 
@@ -263,50 +261,118 @@ Values data not in the emotions file
 
 ## TODO Plots
 
-```{r participant}
-source('R/lube_time.R')
-source('R/events.R')
-source('R/payoffs.R')
-source('R/emotions.R')
-source('R/split_time_hours_check.R')
+```{r participant_plots}
+dt <- build_events_emotions_payoffs()
+dt_payoffs <- payoffs()
+dt_participants <- unique(dt[, .(Session, Participant)])
 
-# First, join emotions to events
-emotions_events_location <- '~/Dropbox/pkg.data/auction_emotions/Raw/emotions_events.rds'
-if(!file.exists(emotions_events_location)){
-  events_files <- list.files('~/Dropbox/pkg.data/auction_emotions/Raw/', pattern='^ESI.+[0-9]{1,1}\\.csv', full.names = TRUE, recursive = TRUE)#session1/ESI-115-02.csv'
-  l_events <- lapply(events_files, events)
-  dt_events <- rbindlist(l_events, use.names = TRUE, fill = TRUE)
+dutch_money_breaks <- data.table(t_begin = seq(0,1000, 1), t_end=seq(1, 1001, 1))
+dutch_money_breaks$step <- 0:(nrow(dutch_money_breaks)-1)
+dutch_money_breaks <- dutch_money_breaks[, dollars:=240-step*3]
+dutch_money_breaks <- dutch_money_breaks[dollars >= 0]
+
+for(i_participant in 1:nrow(dt_participants)){
+  iSession <- dt_participants[i_participant]$Session
+  iParticipant <- dt_participants[i_participant]$Participant
+  dt_part <- dt[Session %in% iSession & Participant %in% iParticipant]
   
-  emotions_files <- list.files('~/Dropbox/pkg.data/auction_emotions/Raw/', pattern='detailed.csv', full.names = TRUE, recursive = TRUE)
-  l_emotions <- lapply(emotions_files, emotions)
-  dt_emotions <- rbindlist(l_emotions, use.names=TRUE, fill=TRUE)
-  
-  # Make sure that total event time match toal emotion time (emotions record for longer duration than events)
-  dt_events <- dt_events[nrow(dt_events), event_end:= dt_emotions[nrow(dt_emotions)]$snap_end]
-  
-  setkey(dt_events, Session, Participant, event_start, event_end)
-  setkey(dt_emotions, Session, Participant, snap_start, snap_end)
-  dt <- foverlaps(dt_events, dt_emotions) 
-  dt <- dt[, .(Session, Participant, snap_start, snap_end, event_start, event_end, AuctionType, AuctionNumber, MarkerType,
-               Neutral, Happy, Sad, Angry, Surprised, Scared, Disgusted, Contempt, Valence, Arousal, Stimulus)]
-  dt <- as.data.table(tidyr::gather(dt, key=EmotionType, value=Score,
-                                    -c(Session, Participant, snap_start, snap_end, event_start, event_end,
-                                       AuctionType, AuctionNumber, MarkerType)))
-  dt$Score_num <- suppressWarnings(as.numeric(dt$Score))
-  dt_payoffs <- payoffs()
-  setkey(dt, Session, AuctionType, AuctionNumber, Participant)
-  setkey(dt_payoffs, Session, AuctionType, AuctionNumber, Participant)
-  dt <- dt[dt_payoffs]
-  saveRDS(dt, emotions_events_location)
-} else {
-  dt <- readRDS(emotions_events_location)
+  # Create Grid of types
+  # auction_types <- unique(dt_part[!is.na(AuctionType)]$AuctionType)
+  auction_types <- 'dutch'
+  emotion_types <- c('Valence', 'Arousal', 'Happy', 'Angry', 'Contempt', 'Disgusted', 'Neutral', 'Sad', 'Scared', 'Stimulus', 'Surprised')
+  dt_grid <- data.table(expand.grid(AuctionType=auction_types, EmotionType=emotion_types, stringsAsFactors = FALSE))
+  for (i_comb in 1:nrow(dt_grid)){
+    cat(i_comb)
+    auction_type <- dt_grid[i_comb]$AuctionType
+    emotion_type <- dt_grid[i_comb]$EmotionType
+    dt_plot <- dt_part[AuctionType==auction_type & EmotionType==emotion_type]
+    
+    # Identify where auctions start
+    dt_time_breaks <- dt_plot[, .SD[1], by=.(AuctionNumber, MarkerType)][MarkerType=='auction']
+    
+    # Brind in payment data
+    dt_pay <- dt_payoffs[Session %in% iSession & Participant %in% iParticipant & AuctionType %in% auction_type]
+    setkey(dt_pay, Session, Participant, AuctionNumber, AuctionType)
+    setkey(dt_plot, Session, Participant, AuctionNumber, AuctionType)
+    dt_plot <- dt_pay[dt_plot]
+    # Used for black dot
+    dt_value <- dt_plot[, .SD[1], by=.(AuctionNumber, MarkerType)][MarkerType=='auction']
+    dt_value <- dt_value[, Score:=as.numeric(Score)]
+    # Used for last dot in auction (red, green, green with black circle)
+    dt_profit <- dt_plot[, .SD[1], by=.(AuctionNumber, MarkerType)][MarkerType=='transition']
+    ## Green circle overlayed on black
+    dt_win <- dt_profit[Winner==1][, Score:=as.numeric(Score)]
+    
+    # PUll in actual payouts (if did not win, have to find who did)
+    dt_group <- unique(dt_plot[, .(Session, AuctionNumber, Group)])
+    setkey(dt_group, Session, AuctionNumber, Group)
+    dt_payoffs_sub <- dt_payoffs[Session %in% iSession & AuctionType %in% auction_type & Winner==1 & !(Participant %in% iParticipant)]
+    setkey(dt_payoffs_sub, Session, AuctionNumber, Group)
+    dt_payoffs_sub <- dt_payoffs_sub[dt_group]
+    dt_payoffs_no_win <- dt_payoffs_sub[!is.na(AuctionType)]
+    dt_payoffs_no_win <- dt_payoffs_no_win[,Price_Winning := Price][,.(AuctionNumber, Price_Winning)]
+    setkey(dt_payoffs_no_win, AuctionNumber)
+    setkey(dt_profit, AuctionNumber)
+    dt_payoffs_no_win <- dt_profit[dt_payoffs_no_win]
+    dt_no_win <- dt_payoffs_no_win[, PotentialProfit := Value-Price_Winning]
+    dt_no_win <- dt_no_win[, Score:=as.numeric(Score)]
+    
+    # Find in the money
+    if(auction_type=='dutch'){
+      # Create cum time by auction number
+      dt_auction_start <- dt_plot[MarkerType=='auction', .SD[1], by=AuctionNumber][,.(AuctionNumber, auction_start = snap_start)]
+      setkey(dt_auction_start, AuctionNumber)
+      setkey(dt_plot, AuctionNumber)
+      dt_dutch <- dt_auction_start[dt_plot]
+      dt_dutch <- dt_dutch[, AuctionTime:=snap_start-auction_start][MarkerType=='auction'][, AuctionTime2:=AuctionTime]
+      setkey(dt_dutch, AuctionTime, AuctionTime2)
+      setkey(dutch_money_breaks, t_begin, t_end)
+      dt_dutch <- foverlaps(dutch_money_breaks, dt_dutch)
+      dt_dutch <- dt_dutch[, .(Session, Participant, snap_start, AuctionTime, AuctionNumber, Value, dollars, Score)]
+      dt_dutch <- dt_dutch[!is.na(Session)]
+      dt_dutch <- dt_dutch[, ProfitPotential:=Value-dollars][ProfitPotential>=0]
+      dt_dutch <- dt_dutch[,.SD[1], by=AuctionNumber]
+      dt_dutch <- dt_dutch[, Score:=as.numeric(Score)][!is.na(Score)]
+      }
+    s_title <- paste0('Participant: ', iParticipant , '   Session: ', iSession, '   Auction: ', auction_type, '   Emotion: ', emotion_type)
+    
+    # dt_marker_colors <- data.table(MarkerType=c("auction", "info","final payment", 'start', 'transition'),
+    #                                Colors=c('#33cc33', '#0099ff', '#00c420', '#00c420', '#00c420'))
+    dt_plot$Score <- as.numeric(dt_plot$Score)
+    p_lot <- ggplot(dt_plot, aes(snap_start, Score, colour=as.factor(MarkerType)))+
+      geom_line(aes(group=1), size=0.3, show.legend = T)  +
+      #    scale_colour_manual(breaks = dt_marker_colors$MarkerType, 
+      #                       values = dt_marker_colors$Colors)+
+      geom_vline(xintercept=dt_time_breaks$snap_start, linetype=2, size=0.3)+ # Dashed game breaks
+      geom_point(data=dt_value, aes(x=snap_start, y = Score), size=2, colour='black') +
+      geom_text(data=dt_value, aes(x=snap_start, y = Score, label=Value), nudge_x = 4, colour='black') +
+      geom_point(data=dt_win, aes(x=snap_start, y=Score), colour='black', size=4) +
+      geom_point(data=dt_win, aes(x=snap_start, y=Score), colour='green', size=2) +
+      geom_text(data=dt_win, aes(x=snap_start, y=Score, label=Profit), colour='black', nudge_x = 4) +
+      geom_point(data=dt_win[Profit < 0], aes(x=snap_start, y=Score), colour='red', size=2) + 
+      geom_point(data=dt_no_win[PotentialProfit>0], aes(x=snap_start, y=Score), colour='green', size=2) +
+      geom_text(data=dt_no_win[PotentialProfit>0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 4) +
+      geom_point(data=dt_no_win[PotentialProfit<=0], aes(x=snap_start, y=Score), colour='red', size=2) +
+      geom_text(data=dt_no_win[PotentialProfit<=0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 4) +
+                 scale_x_discrete(name="Auction Number",
+                       limits=dt_time_breaks$snap_start,
+                       labels=dt_time_breaks$AuctionNumber) +
+      theme_bw() +
+      labs(y=paste(emotion_type, 'Score'), title=s_title)
+    if(auction_type=='dutch'){
+      p_lot <- p_lot +
+        geom_point(data=dt_dutch, aes(x=snap_start, y=Score), colour='green', size=2) +
+        geom_point(data=dt_dutch, aes(x=snap_start, y=Score), colour='white', size=1)
+    }
+    f_name <- paste0('_session_', iSession, '_participant_', iParticipant, '_auctionType_', auction_type,  '_emotionType_', emotion_type, '.pdf')
+    ggsave(filename = paste0('~/Dropbox/pkg.data/auction_emotions/Figures/', f_name), width = 50, height=5, units = 'in', limitsize = FALSE)
+  }
 }
 
-# Join emotions-events to payoffs
+```
 
 
-
-
+```{r oldParticipantCode}
 # Create marker type flags
 regex_infoFlag <- '(i[0-9]{1,2}(?=$)|info)'
 dt <- dt[stringr::str_detect(Event_Marker, regex_infoFlag), MarkerType:='info']
@@ -359,7 +425,7 @@ for(i_comb in 1:nrow(dt_grid)){
                        limits=dt_time_breaks$dt_video_time,
                        labels=dt_time_breaks$AuctionNumber) +
     theme_bw() +
-    labs(y=paste(emotion_type, 'Score'))
+    
     
     
 ```

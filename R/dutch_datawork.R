@@ -41,7 +41,7 @@ dutch_datawork <- function(){
       info_event <- paste0('info', stringr::str_replace(event, 'a', ''))
       time_end_time <- dt_time[REF_MarkerName == info_event]$time_stamp
       time_end_detail <- max(dt_detail_event$time_stamp)
-      time_end <- max(time_end_time, time_end_detail)Target4,973
+      time_end <- max(time_end_time, time_end_detail)
       # Break up into 0.5 second segments
       time_floor <- seq(time_start_actual, time_end, 0.5)
       time_ceil <- c(time_floor[2:(length(time_floor))]-0.001, time_end)
