@@ -277,10 +277,10 @@ for(i_participant in 1:nrow(dt_participants)){
   dt_part <- dt[Session %in% iSession & Participant %in% iParticipant]
   
   # Create Grid of types
-  # auction_types <- unique(dt_part[!is.na(AuctionType)]$AuctionType)
-  auction_types <- 'dutch'
-  #emotion_types <- c('Valence', 'Arousal', 'Happy', 'Angry', 'Contempt', 'Disgusted', 'Neutral', 'Sad', 'Scared', 'Stimulus', 'Surprised')
-  emotion_types <- 'Contempt'
+  auction_types <- unique(dt_part[!is.na(AuctionType)]$AuctionType)
+  # auction_types <- 'dutch'
+  emotion_types <- c('Valence', 'Arousal', 'Happy', 'Angry', 'Contempt', 'Disgusted', 'Neutral', 'Sad', 'Scared', 'Stimulus', 'Surprised')
+  # emotion_types <- 'Contempt'
   dt_grid <- data.table(expand.grid(AuctionType=auction_types, EmotionType=emotion_types, stringsAsFactors = FALSE))
   for (i_comb in 1:nrow(dt_grid)){
     cat(i_comb)
@@ -346,15 +346,15 @@ for(i_participant in 1:nrow(dt_participants)){
       #                       values = dt_marker_colors$Colors)+
       geom_vline(xintercept=dt_time_breaks$snap_start, linetype=2, size=0.3)+ # Dashed game breaks
       geom_point(data=dt_value, aes(x=snap_start, y = Score), size=2, colour='black') +
-      geom_text(data=dt_value, aes(x=snap_start, y = Score, label=Value), nudge_x = 4, colour='black') +
+      geom_text(data=dt_value, aes(x=snap_start, y = Score, label=Value), nudge_x = 3, colour='black') +
       geom_point(data=dt_win, aes(x=snap_start, y=Score), colour='black', size=4) +
       geom_point(data=dt_win, aes(x=snap_start, y=Score), colour='green', size=2) +
-      geom_text(data=dt_win, aes(x=snap_start, y=Score, label=Profit), colour='black', nudge_x = 4) +
+      geom_text(data=dt_win, aes(x=snap_start, y=Score, label=Profit), colour='black', nudge_x = 3) +
       geom_point(data=dt_win[Profit < 0], aes(x=snap_start, y=Score), colour='red', size=2) + 
       geom_point(data=dt_no_win[PotentialProfit>0], aes(x=snap_start, y=Score), colour='green', size=2) +
-      geom_text(data=dt_no_win[PotentialProfit>0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 4) +
+      geom_text(data=dt_no_win[PotentialProfit>0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 3) +
       geom_point(data=dt_no_win[PotentialProfit<=0], aes(x=snap_start, y=Score), colour='red', size=2) +
-      geom_text(data=dt_no_win[PotentialProfit<=0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 4) +
+      geom_text(data=dt_no_win[PotentialProfit<=0], aes(x=snap_start, y=Score, label=PotentialProfit), colour='black', nudge_x = 3) +
                  scale_x_discrete(name="Auction Number",
                        limits=dt_time_breaks$snap_start,
                        labels=dt_time_breaks$AuctionNumber) +
