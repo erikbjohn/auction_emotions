@@ -185,11 +185,34 @@ plot(plt_part4)
 
 ```
 
+# Build actual dataset
 
 ```{r build_events_emotions_payoffs}
 dt <- build_events_emotions_payoffs()
 ```
 
+# Dataset for regression
+
+```{r dt_reg}
+dt_reg <- build_dt_reg(dt)
+```
+
+
+### Auction Type
+
+Emotions by auction type
+
+```{r}
+dt_sub <- dt[!is.na(AuctionType)]
+dt_sub <- dt_sub[!is.na(Score_num)]
+dt_stats <- dt_sub[, mean(Score_num), by=c('AuctionType', 'EmotionType')]
+dt_spread <- tidyr::spread(dt_stats, AuctionType, V1)
+dt_spread <- as.data.table(dt_spread)
+dt_spread <- dt_spread[, diff:=dutch-first_price][order(diff)]
+
+```
+
+## Notes on Marker Type
 
 ## Questions
 

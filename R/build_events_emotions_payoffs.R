@@ -1,4 +1,5 @@
 build_events_emotions_payoffs <- function(){
+  ## Main function for joining all raw data into one dataset
   source('R/lube_time.R')
   source('R/events.R')
   source('R/payoffs.R')
@@ -43,7 +44,7 @@ build_events_emotions_payoffs <- function(){
     dt$Score_num <- suppressWarnings(as.numeric(dt$Score))
     if (!file.exists(payoffs_location)){
       dt_payoffs <- payoffs()
-      saveRDS(dt_payoff, payoffs_location)
+      saveRDS(dt_payoffs, payoffs_location)
     } else {
       dt_payoffs <- readRDS(payoffs_location)
     }
