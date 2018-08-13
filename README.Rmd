@@ -8,6 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+options(scipen=0)
 library(data.table)
 library(stringr)
 library(knitr)
