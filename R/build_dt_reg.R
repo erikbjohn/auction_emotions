@@ -5,9 +5,10 @@ build_dt_reg <- function(dt=NULL){
   figures_location <- '~/Dropbox/pkg.data/auction_emotions/Figures_regression/'
   l_reg <- list()
   if(!file.exists(dt_reg_location)){
-    if(is.null(dt)){
       if(!(file.exists(dt_scores_location))){
+        if(is.null(dt)){
         dt <- build_events_emotions_payoffs()
+        }
         dt <- dt[, marker_start:=min(snap_start), by=c('Session', 'Participant', 'AuctionType', 'AuctionNumber', 'MarkerType')]
         dt <- dt[, marker_time_elapsed := snap_start-marker_start]
         dt_scores <- dt[!is.na(Score_num)]
@@ -18,17 +19,20 @@ build_dt_reg <- function(dt=NULL){
       }
       # Time dilation
       time_start <- 0
-      time_end <- 20
-      time_window <- 0.25
+      time_end <- 40
+      time_window <- 0.5
       dt_times <- data.table::data.table(begin=seq(0,(time_end-time_window), time_window),
                                          end = seq(time_window, time_end, time_window))
-      sMarkerType <- 'auction' # Measure emotional response to value draw
+      
+      # Measure emotional response to value draw
+      sMarkerType <- 'auction' 
       dt_marker <- dt_scores[MarkerType==sMarkerType]
       
       l_window_results <- vector('list', length=nrow(dt_marker))
       
       for(iTime in 1:nrow(dt_times)){
         cat(iTime, ' of ', nrow(dt_times), ' windows ', '\n')
+        
         # Two second response
         window_begin <- dt_times[iTime]$begin
         window_end <- dt_times[iTime]$end
@@ -41,25 +45,23 @@ build_dt_reg <- function(dt=NULL){
                                                     AuctionTypeOrder, Group, Value, BidActual, BidNash, TimeToBid, 
                                                     Winner, Price, Profit, EmotionType, avg_emotion)])
         
-        
         # Value Assignment results
         dt_window <- dt_window[, Value_low_60 := 0][Value <= 60, Value_low_60 := 1]
         dt_window <- dt_window[, Value_high_180 := 0][Value >= 180, Value_high_180 := 1]
-        dt_window <- dt_window[,p_high_value:=(Value/240)^3][,p_high_value_sq:=p_high_value^2]
+        dt_window <- dt_window[, p_high_value:=(Value/240)^3][, p_high_value_sq:=p_high_value^2]
         
         # Within auction type estimates
         value_emotion_regressions <- function(emotion_type, auction_type, dt_fun){
           l_mod  <- list()
-          l_mod$value <- lm(avg_emotion ~ Value + factor(participant_id), data = dt_fun)
-          l_mod$p_high_value <- lm(avg_emotion ~ p_high_value + factor(participant_id), data = dt_fun)
-          l_mod$Value_low_60 <- lm(avg_emotion ~ Value_low_60  + factor(participant_id), data = dt_fun)
-          l_mod$Value_high_180 <- lm(avg_emotion ~ Value_high_180 + factor(participant_id), data = dt_fun)
+          l_mod$value <- lm(avg_emotion ~ Value , data = dt_fun)
+          l_mod$p_high_value <- lm(avg_emotion ~ p_high_value, data = dt_fun)
+          l_mod$Value_low_60 <- lm(avg_emotion ~ Value_low_60, data = dt_fun)
+          l_mod$Value_high_180 <- lm(avg_emotion ~ Value_high_180 , data = dt_fun)
           return(l_mod)
         }
         
         emotions <- unique(dt_window$EmotionType)
         auction_types <- unique(dt_window$AuctionType)
-        
         dt_args <- as.data.table(expand.grid(emotions, auction_types, stringsAsFactors=FALSE))
         setnames(dt_args, names(dt_args), c('emotion_type', 'auction_type'))
         l_value_emotion_regression <- vector('list', length=nrow(dt_args))
@@ -83,9 +85,10 @@ build_dt_reg <- function(dt=NULL){
                                  window_end = window_end,
                                  rank = mod$rank,
                                  treatment = names(mod$coefficients)[2],
-                                 intercept = coef(summary(mod))[2,3],
+                                 intercept = coef(summary(mod))[1,1],
+                                 ittercept_std_error = coef(summary(mod))[1,2],
                                  beta=coef(summary(mod))[2,1],
-                                 std_error=2*coef(summary(mod))[2,2],
+                                 beta_std_error = coef(summary(mod))[2,2],
                                  p_val=coef(summary(mod))[2,4])
             dt_mod <- dt_mod[, predict:=intercept+beta]
             l_mods_extract[[iMod]] <- dt_mod
@@ -99,7 +102,9 @@ build_dt_reg <- function(dt=NULL){
     } else {
       dt_reg <- readRDS(dt_reg_location)
     }
+  
     # Next produce plots
+  
     emotions <- unique(dt_reg$emotion_type)
     treatments <- unique(dt_reg$treatment)
     dt_plots <- as.data.table(expand.grid(emotions, treatments, stringsAsFactors = FALSE))
@@ -127,23 +132,31 @@ build_dt_reg <- function(dt=NULL){
     }
       
     # prediction plots
-    dt_pred_plots <- dt_plots[treatment=='Value_high_180']
+    dt_pred_plots <- dt_plots[treatment=='p_high_value']
     for(iPlot in 1:nrow(dt_pred_plots)){
       emotion <- dt_pred_plots[iPlot]$emotion
       sTreatment <- dt_pred_plots[iPlot]$treatment
       # Start working right here
-      dt_plot <- dt_reg[emotion_type == emotion & treatment == sTreatment]
-      dt_plot <- dt_plot[, conf_low := beta-1.96*std_error]
-      dt_plot <- dt_plot[, conf_high := beta+1.96*std_error]
-      p <- ggplot() + 
-        geom_ribbon(data=dt_plot, aes(x=window_end, ymin=conf_low, ymax=conf_high, group=auction_type, fill=auction_type), alpha = 0.3)+
-        geom_line(data=dt_plot, aes(x=window_end, y=beta, group=auction_type, colour=auction_type)) +
+      dt_pred_plot <- dt_reg[emotion_type == emotion & treatment==sTreatment]
+      intercept_outlier_dutch_high <- mean(dt_pred_plot[auction_type=='dutch']$intercept) + 4*sd(dt_pred_plot[auction_type=='dutch']$intercept)
+      intercept_outlier_dutch_low <- mean(dt_pred_plot[auction_type=='dutch']$intercept) - 4*sd(dt_pred_plot[auction_type=='dutch']$intercept)
+      dt_pred_plot <- dt_pred_plot[intercept > intercept_outlier_dutch_low]
+      dt_pred_plot <- dt_pred_plot[, predicted_hi_val:=intercept+beta*0.75]
+      dt_pred_plot <- dt_pred_plot[, predicted_low_val:=intercept+beta*0.25]
+      dt_pred_plot <- tidyr::gather(dt_pred_plot, key=predict_type, value=predict_value, predicted_hi_val, predicted_low_val)
+      dt_pred_plot <- as.data.table(dt_pred_plot)
+      dt_pred_plot <- dt_pred_plot[, predicts := interaction(auction_type, predict_type)]
+      
+      ggplot() + 
+        geom_line(data=dt_pred_plot, aes(x=window_end, y=predict_value,
+                                         group=predicts, 
+                                         colour=predicts)) +
         #geom_line(data=dt_plot, aes(x=window_end, y=conf_low, group=auction_type, colour=auction_type)) +
         #geom_line(data=dt_plot, aes(x=window_end, y=conf_high, group=auction_type, colour=auction_type)) +
-        scale_color_manual(values=c("#CC6666", "#999999")) + 
+        scale_color_manual(values=c("#ff0000", "#999999","#CC6666", "#000000")) + 
         scale_fill_manual(values=c("#CC6666", "#999999")) +
         geom_hline(yintercept = 0)
-      fName <- paste0(figures_location, 'Emotion-', emotion, '_Treatment-', stringr::str_replace_all(sTreatment, '\\_', ''), '_Window-', time_window,'sec')
+      fName <- paste0(figures_location, 'Prediction__Emotion-', emotion, '_Treatment-', stringr::str_replace_all(sTreatment, '\\_', ''), '_Window-', time_window,'sec')
       ggsave(filename=fName, device='pdf')
     }
         
@@ -151,38 +164,4 @@ build_dt_reg <- function(dt=NULL){
       
       
         
-        
-        
-        l_emotion_regressions <- mapply(function(x,y) value_emotion_regressions(x, y), emotions, auction_types, MoreArgs = list(dt_fun=dt_window))
-        for(iMod in 1:length(l_emotion_regressions)){
-          l_emotion <- l_emotion_regressions[[iMod]]
-          for(iEmotion in 1:length(l_emotion)){
-          cat(paste(sec, 'Second Dependent Emotion:', emotions[iMod], 'Treatment:', names(l_emotion)[iEmotion]))
-            cat('\n ------------------------------------ \n')
-            print(summary(l_emotion[[iEmotion]])$coef[1:3,1:4])
-            cat('\n ------------------------------------ \n')
-            # Store information
-            #dt_reg <- as.data.table(summary(l_emotion[[iEmotion]])$coef[1:3, 1:4])
-            #dt_reg$coeff <- row.names(summary(l_emotion[[iEmotion]]$coef[1:3, 1:4]))
-            #dt_reg$emotion <- emotions[iMod]
-            #dt_reg$treatment <- names(l_emotion)[iEmotion]
-            #dt_reg$seconds <- sec
-          #  if(!exists('dt_regs')){
-          #    dt_regs <- dt_reg 
-          #  } else {
-          #    dt_regs <- rbindlist(list(dt_regs, dt_reg), use.names = TRUE, fill=TRUE)
-          #  }
-          }
-        }
-      }
-      
-      
-      # Five second response
-      dt <- dt_scores[, marker_5sec:=0][marker_time_elapsed < 5, marker_5sec := 1][!(is.na(avg_emotion))]
-
-    }
-    saveRDS(dt_reg, dt_reg_location)
-  } else {
-    dt_reg <- readRDS(dt_reg_location)
-  }
 }
