@@ -146,17 +146,19 @@ build_dt_reg <- function(dt=NULL){
       dt_pred_plot <- tidyr::gather(dt_pred_plot, key=predict_type, value=predict_value, predicted_hi_val, predicted_low_val)
       dt_pred_plot <- as.data.table(dt_pred_plot)
       dt_pred_plot <- dt_pred_plot[, predicts := interaction(auction_type, predict_type)]
+      dt_pred_plot$predicted <- sapply(dt_pred_plot$predicts, function(x) stringr::str_replace_all(x,'\\.predicted', ''))
       
       ggplot() + 
         geom_line(data=dt_pred_plot, aes(x=window_end, y=predict_value,
-                                         group=predicts, 
-                                         colour=predicts)) +
+                                         group=predicted, 
+                                         colour=predicted)) +
         #geom_line(data=dt_plot, aes(x=window_end, y=conf_low, group=auction_type, colour=auction_type)) +
         #geom_line(data=dt_plot, aes(x=window_end, y=conf_high, group=auction_type, colour=auction_type)) +
         scale_color_manual(values=c("#ff0000", "#999999","#CC6666", "#000000")) + 
         scale_fill_manual(values=c("#CC6666", "#999999")) +
-        geom_hline(yintercept = 0)
-      fName <- paste0(figures_location, 'Prediction__Emotion-', emotion, '_Treatment-', stringr::str_replace_all(sTreatment, '\\_', ''), '_Window-', time_window,'sec')
+        geom_hline(yintercept = 0) +
+        ggtitle(paste0(emotion, '_', stringr::str_replace_all(sTreatment, '\\_', '')))
+      fName <- paste0(figures_location, 'Prediction__Emotion-', emotion, '_Treatment-', stringr::str_replace_all(sTreatment, '\\_', ''))
       ggsave(filename=fName, device='pdf')
     }
         
