@@ -20,7 +20,7 @@ build_dt_reg <- function(dt=NULL){
       # Time dilation
       time_start <- 0
       time_end <- 40
-      time_window <- 0.5
+      time_window <- 0.25
       dt_times <- data.table::data.table(begin=seq(0,(time_end-time_window), time_window),
                                          end = seq(time_window, time_end, time_window))
       
@@ -76,6 +76,8 @@ build_dt_reg <- function(dt=NULL){
           dt_fun <- dt_window[AuctionType == auction_type & EmotionType == emotion_type]
           l_mods <- value_emotion_regressions(emotion_type, auction_type, dt_fun)
           # Extract data from regression
+          rows_count <- which(sapply(l_mods, function(x) nrow(coef(summary(x))))==2)
+          l_mods <- l_mods[rows_count]
           l_mods_extract <- vector('list', length=length(l_mods))
           for(iMod in 1:length(l_mods)){
             mod <- l_mods[[iMod]]
