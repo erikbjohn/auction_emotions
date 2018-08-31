@@ -229,7 +229,7 @@ analysis_auction_order_and_type <- function(){
     dt_ttest_base_order$auctionOrder_2 <- l_auctionOrder$estimate[2]
     dt_ttest_base_order$null_value <- l_auctionOrder$null.value
     dt_ttest_base_order$test_order <- l_auctionOrder$alternative
-    dt_print_base_order <- dt_ttest_base_order[, .(auctionOrder_1, auctionOrder_2, p_value)]
+    dt_print_base_order <- dt_ttest_base_order[, .(auctionOrder_1, auctionOrder_2,t_stat, p_value)]
     
     ## Regression Analysis
     
@@ -246,8 +246,15 @@ analysis_auction_order_and_type <- function(){
     l_reg$TypeNum <- lm(pctOfNash ~ AuctionType + AuctionNumberInteger, data = dt)
     l_reg$TypeNumOrder <- lm(pctOfNash ~ AuctionType + AuctionNumberInteger + AuctionTypeOrder, data=dt)
     l_reg$TypeOrder <- lm(pctOfNash ~ AuctionType + AuctionTypeOrder, data = dt)
-     l_reg$TypeOrderNum <- lm(pctOfNash ~ AuctionType + AuctionTypeOrder + AuctionNumberInteger * AuctionType +
-                               AuctionNumberInteger * AuctionTypeOrder , data=dt)
+    l_reg$TypeOrderNum <- lm(pctOfNash ~ AuctionType + AuctionTypeOrder +
+                               AuctionNumberInteger * AuctionType +
+                               AuctionNumberInteger * AuctionTypeOrder +
+                               AuctionType * AuctionTypeOrder, data=dt)
+    l_reg$LastOrder <- lm(pctOfNash ~ 
+                                  AuctionType + AuctionTypeOrder + last_order_one_type,
+                                data=dt)
+    #l_reg$TypeOrderNum <- lm(pctOfNash ~ AuctionType + AuctionTypeOrder + AuctionNumberInteger * AuctionType +
+    #                           AuctionNumberInteger * AuctionTypeOrder , data=dt)
     lapply(l_reg, summary)
     
     l_reg_learn <- list()

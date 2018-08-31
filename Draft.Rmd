@@ -56,7 +56,7 @@ A total of 172 subjects completed the study in one of 8 sessions.  Each session 
 
 ## Bidding
 
-We begin by providing the traditional analysis of behavior in the 2150 auctions that we observed. The average price in the first price auctions was XXX and the average observed price in the Dutch clock auctions was XXX.  While both of these averages are statistically different from the theoretically predicted value of 144 (p-values of XXX and XXX for the first and Dutch# auctions, respectively), the two averages are not statistically different from each other (p-value  = XXXX).  Figure 2 shows the distribution of observed bids conditional on value.  For the first price auction the figure includes all bid, but for Dutch auction only the winner’s bid is observable and thus left portion of the figure is based on very few observations for the Dutch auction.  For both auction formats, the observed bids tend to lie above the risk neutral equilibrium level, consistent with moderate risk aversion (see Cox, Roberson, and Smith, 1982).  But contrary to the usual finding that people place lower bids in Dutch auctions, Figure 2 indicates that conditional on their value draw subjects tend to place similar bids in both auctions.\footnote{In a field experiment, Lucking-Reiley (1999) found that prices were higher with Dutch auctions, but in light of the work by Katok and Kwasnica (2008) and Adam, Krämer, and Weinhardt (2013) that result is likely due to the extremely slow clock speed that changed over days rather than seconds.} This similarity is supported statistically by the following test:
+We begin by providing the traditional analysis of behavior in the 2150 auctions that we observed. The average price in the first price auctions was XXX and the average observed price in the Dutch clock auctions was XXX.  While both of these averages are statistically different from the theoretically predicted value of 144 (p-values of XXX and XXX for the first and Dutch# auctions, respectively), the two averages are not statistically different from each other (p-value  = XXXX).  Figure 2 shows the distribution of observed bids conditional on value.  For the first price auction the figure includes all bid, but for Dutch auction only the winner’s bid is observable and thus left portion of the figure is based on very few observations for the Dutch auction.  For both auction formats, the observed bids tend to lie above the risk neutral equilibrium level, consistent with moderate risk aversion (see Cox, Roberson, and Smith, 1982).  But contrary to the usual finding that people place lower bids in Dutch auctions, Figure 2 indicates that conditional on their value draw subjects tend to place similar bids in both auctions.\footnote{In a field experiment, Lucking-Reiley (1999) found that prices were higher with Dutch auctions, but in light of the work by Katok and Kwasnica (2008) and Adam, Krämer, and Weinhardt (2013) that result is likely due to the extremely slow clock speed that changed over days rather than seconds.} We illustrate these differences by defining bid share as the ratio of Actual Bid to Nash equilibrim bid. Therefore, a participant with an Actual bid greater than the Nash equilibirum bid will have a bid share > 1.\footnote{For the purpose of this analysis we restrict the sample to rational bids where bid value < the value draw.}   
 
 ```{r, results='asis', echo=FALSE}
 dt_type <- analysis_auction_order_and_type()$auction_type
@@ -65,21 +65,47 @@ kable(dt_type)
 
 ![Figure 2: Distribution of Observerd Bids in First Price Sealed Bid and Dutch Clock Auctions](Figures/traditional.pdf)
 
-While the dutch and first price auction do not show differences in aggregate, there are substantial differences based upon auction order, auction sequence and auction type. These results are shown in the following regression.
+```{r nashbids, echo=FALSE}
+dt_order <- analysis_auction_order_and_type()$auction_order
+value <- 200
+nashBid <- value*.75
+bidFirst25 <- round(nashBid * dt_order$auctionOrder_1,2)
+bidSecond25 <- round(nashBid * dt_order$auctionOrder_2,2)
+```
+While the dutch and first price auction do not show differences in aggregate, there are substantial differences based upon auction order, auction sequence and auction type. For example, auction order influences bid share. Each subject is randomly placed into an sequence of \{25 dutch, 25 first price\} or \{25 first price,  25 dutch\}. This table shows that participants bid further from the Nash equilibrium amount with more auction exposure. For example, the average bid for a participant with a value of \$`r value` (optimal nash equilibrium bid amount of \$`r nashBid`) is \$`r bidFirst25` in the first auction set and \$`r bidSecond25` in the second set.
 
-```{r, results='asis'}
+```{r, results='asis', echo=FALSE}
+kable(dt_order, 
+      col.names = c('First 25', 'Second 25' , 't stat', 'p value'))
+```
+
+
+
+```{r, results='asis', echo=FALSE}
 l_results  <- analysis_auction_order_and_type()
 #l_results <- lapply(l_results, function(x) stringr::str_replace_all(x, '\\_', ''))
 # stargazer(l_results$regression_pctOfNash$Type, l_results$regression_pctOfNash$TypeNum, l_results$regression_pctOfNash$TypeOrderNum,
 #                  title='Percent of Nash Bid Estimates')
 regResults <- l_results$regression_pctOfNash$Type
-stargazer(l_results$regression_pctOfNash$Type,
-          l_results$regression_pctOfNash$TypeNum,
-          l_results$regression_pctOfNash$TypeOrder,
+stargazer(#l_results$regression_pctOfNash$Type,
+          #l_results$regression_pctOfNash$TypeNum,
+          l_results$regression_pctOfNash$TypeNumOrder,
           l_results$regression_pctOfNash$TypeOrderNum,
-          covariate.labels=c("First Price Auction", "Auction Number", "Auction Order 2","First Price X Number","Auction Order 2 x Number","Constant"),
-          omit.stat=c('LL', 'ser', 'f'), no.space=TRUE)
+          l_results$regression_pctOfNash$LastOrder,
+          order=c(9, 1, 6, 2, 3, 4, 5, 8, 7),
+          covariate.labels=c("Constant","First Price", "Second 25", "Number", "First Price X Number","Second 25 X Number", 'First Price X Second 25',
+                             "First Price First Set Last Third", 'Dutch First Set Last Third'),
+          dep.var.labels=c('Actual Bid/Nash'),
+          omit.stat=c('LL', 'ser', 'f'),
+          no.space=TRUE, 
+          header=FALSE,
+          digits=4,
+          title='Bid Determinants Regression Results')
 ```
+
+
+
+
 ## Emotions
 
 We now turn to our main focus, the analysis of the emotional responses of subjects in the auctions. Table 2 provides the average emotions during the auctions and while receiving feedback about the outcome for each auction institution.  The results indicate......
