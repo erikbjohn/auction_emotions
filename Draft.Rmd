@@ -79,7 +79,7 @@ kable(dt_order,
       col.names = c('First 25', 'Second 25' , 't stat', 'p value'))
 ```
 
-
+Clearly, sequence and ordering affects the bid share. 
 
 ```{r, results='asis', echo=FALSE}
 l_results  <- analysis_auction_order_and_type()
