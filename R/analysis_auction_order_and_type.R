@@ -14,8 +14,9 @@ analysis_auction_order_and_type <- function(){
       dt_ttest$test_type <- l_in$alternative
       return(dt_ttest)
     }
+    
     # dt comes from payoffs summarize but need to double check. This is the data used for this analysis
-    dt <- readRDS('~/Dropbox/pkg.data/auction_emotions/dt_analysis_auction_order_and_type.rds')
+    dt <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_analysis_auction_order_and_type.rds')
     dt <- dt[ , AuctionNumberInteger:=as.integer(AuctionNumber)]
     dt <- dt[ ,pctOfNash:=BidActual/BidNash]
     dt <- dt[!is.na(AuctionTypeOrder)]
@@ -49,6 +50,7 @@ analysis_auction_order_and_type <- function(){
     for(iAuctionOrder in 1:length(unique(dt$AuctionTypeOrder))){
       auctionOrder <- unique(dt$AuctionTypeOrder)[iAuctionOrder]
       dt_order <- dt[AuctionTypeOrder %in% auctionOrder]
+      
       # 95% of Nash quantiles
       #dt_cut <- dt[pctOfNash > quants[1] & pctOfNash < quants[2]]
       #dt_cut <- dt_cut[!is.na(AuctionNumberInteger)]
@@ -57,7 +59,9 @@ analysis_auction_order_and_type <- function(){
       l_dts <- vector(mode='list', length=nrow(dt_auctionNumberIntegers))
       for(iCut in 1:nrow(dt_auctionNumberIntegers)){
         auctionNumCutLow <- dt_auctionNumberIntegers[iCut]$low
-        auctionNumCutHipayoffs_summarize <- function(){
+        auctionNumCutHi <- dt_auctionNumberIntegers[iCut]$high
+        
+        payoffs_summarize <- function(){
           source('R/payoffs.R')
           dt_payoffs <- payoffs()
           # First Price Summary
@@ -187,20 +191,20 @@ analysis_auction_order_and_type <- function(){
             
           }
           dtgh <- dt_auctionNumberIntegers[iCut]$high
-        dt_start <- dt_order[AuctionNumberInteger >= auctionNumCutLow &
-                               AuctionNumberInteger <= auctionNumCutHigh &
-                               AuctionTypeOrder %in% auctionOrder]
-        l_ttest <- list()
-        l_ttest$twoSided <- t.test(pctOfNash ~ AuctionType, data=dt_start)
-        l_ttest$dutchLessThan <- t.test(pctOfNash ~ AuctionType, data=dt_start, alternative='less')
-        l_ttest$dutchGreaterThan <- t.test(pctOfNash ~ AuctionType, data=dt_start, alternative='greater')
-        dt_ttest <- rbindlist(lapply(l_ttest, fun_l_ttest_to_dt), use.names = TRUE, fill=TRUE)  
-        dt_ttest$AuctionNumCutLow <- auctionNumCutLow
-        dt_ttest$AuctionNumCutHigh <- auctionNumCutHigh
-        dt_ttest$test_crit <- 'AuctionType'
-        l_dts[[iCut]] <- dt_ttest
-      }
-      dt_auction_order <- rbindlist(l_dts, use.names=TRUE, fill=TRUE)
+          dt_start <- dt_order[AuctionNumberInteger >= auctionNumCutLow &
+                                 AuctionNumberInteger <= auctionNumCutHigh &
+                                 AuctionTypeOrder %in% auctionOrder]
+          l_ttest <- list()
+          l_ttest$twoSided <- t.test(pctOfNash ~ AuctionType, data=dt_start)
+          l_ttest$dutchLessThan <- t.test(pctOfNash ~ AuctionType, data=dt_start, alternative='less')
+          l_ttest$dutchGreaterThan <- t.test(pctOfNash ~ AuctionType, data=dt_start, alternative='greater')
+          dt_ttest <- rbindlist(lapply(l_ttest, fun_l_ttest_to_dt), use.names = TRUE, fill=TRUE)  
+          dt_ttest$AuctionNumCutLow <- auctionNumCutLow
+          dt_ttest$AuctionNumCutHigh <- auctionNumCutHigh
+          dt_ttest$test_crit <- 'AuctionType'
+          l_dts[[iCut]] <- dt_ttest
+        }
+        dt_auction_order <- rbindlist(l_dts, use.names=TRUE, fill=TRUE)
       dt_auction_order$auctionOrder <- auctionOrder
       l_dt_orders[[iAuctionOrder]] <- dt_auction_order
     }

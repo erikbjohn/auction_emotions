@@ -57,9 +57,7 @@ analysis_emotions_graphical <- function(dt_reg){
     fName <- paste0(figures_location, 'Prediction__Emotion-', emotion, '_Treatment-', stringr::str_replace_all(sTreatment, '\\_', ''))
     ggsave(filename=fName, device='pdf')
   }
-
-
-
+  
   # Circular plots
   ## Build circle
   x_coords <- seq(-pi,pi,length=120)
@@ -179,7 +177,7 @@ analysis_emotions_graphical <- function(dt_reg){
     ggplot2::ggplot(dt_sprd[auction_type=='first_price'], aes(x=Valence, y=Arousal, color='blue')) +
       geom_segment(aes(x=-1.25, y=0, xend=1.25, yend=0), color='black', size=0.1) +
       geom_segment(aes(x=0, y=-1.25, xend=0, yend=1.25), color='black', size=0.1) +
-      geom_path() +
+      geom_path(col='blue') +
       geom_path(data=dt_coords, aes(x=x_cord, y=y_cord), col='black', size=0.1) +
       # Quadrant 1
       geom_segment(aes(x=0, y=0, xend=dt_cord_1[15]$x_cord, yend=dt_cord_1[15]$y_cord), color='grey', size=0.1, linetype='dashed') +

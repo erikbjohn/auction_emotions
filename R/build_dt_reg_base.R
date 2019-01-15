@@ -1,4 +1,4 @@
-build_dt_reg <- function(dt=NULL){
+build_dt_reg_base <- function(dt=NULL){
   # Converts the full, raw dataset into regression usable format
   source('R/build_events_emotions_payoffs.R')
   dt_reg_base_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_reg_base.rds'
@@ -24,23 +24,6 @@ build_dt_reg <- function(dt=NULL){
       time_window <- 0.25
       dt_times <- data.table::data.table(begin=seq(0,(time_end-time_window), time_window),
                                          end = seq(time_window, time_end, time_window))
-      
-      # Regression for first two seconds after value endowment
-      dt_open <- dt_scores[marker_time_elapsed <= 2]
-      emotions <- unique(dt_open$EmotionType)
-      l_reg <- vector(mode='list', length=length(emotions))
-      iter <- 0
-      for(emotion in emotions){    
-        iter <- iter + 1
-        dt_emotion <- dt_open[EmotionType %in% emotion]
-        dt_emotion <- dt_emotion[, dutch:=0]
-        dt_emotion <- dt_emotion[AuctionType==emotion, dutch:=1]
-        dt_emotion <- dt_emotion[, value_x_dutch := Value*dutch]
-        l_reg[[iter]]$emotion <- emotion
-        l_reg[[iter]]$lm <- lm(Score_num ~ Value + dutch + value_x_dutch + marker_time_elapsed + participant_id, data=dt_emotion)
-        summary(lm_angry)
-      }
-      
       
       # Measure emotional response to value draw
       sMarkerType <- 'auction' 

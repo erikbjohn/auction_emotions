@@ -1,0 +1,64 @@
+---
+title: "OpeningRegressions"
+author: "Erik Johnson"
+date: "Jan 14, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stargazer)
+library(data.table)
+library(ggplot2)
+library(car)
+source('R/reg_open_5.R')
+```
+
+# Opening Regressions
+
+These are regression results and plots for the first five seconds after the value allocation.
+
+
+
+
+```{r reg_open_regrssions, results='as.is', cache=TRUE}
+l_reg <- reg_open()
+
+for(i_reg in 1:length(l_reg)){
+  coefficients_out <- l_reg[[i_reg]]$lm$coefficients[1:5]
+  coefficients_individual <- which(grepl('participant', names(l_reg[[i_reg]]$lm$coefficients)))
+  coefficients_individual_betas <- sum(l_reg[[i_reg]]$lm$coefficients[coefficients_individual])/(length(coefficients_individual)+1)
+  emotion_type <- l_reg[[i_reg]]$emotion
+  
+  
+  dt_dutch <- data.table(auction_type = 'dutch', 
+                         value = 0:240)
+  dt_dutch <- dt_dutch[, pred:=(coefficients_individual_betas + coefficients_out[1] + 
+                                  coefficients_out[2]*value + 
+                                  coefficients_out[3]  + coefficients_out[4] * value)]
+  dt_first_price <- data.table(auction_type = 'first price',
+                               value = 0:240)
+  dt_first_price <- dt_first_price[, pred:=coefficients_individual_betas + coefficients_out[1] + value * coefficients_out[2]]
+  dt_predictions <- rbindlist(list(dt_dutch, dt_first_price), use.names = TRUE)
+  
+  ggplot(dt_predictions, aes(x=value, y=pred, group=auction_type)) +
+    geom_line(aes(linetype=auction_type)) +
+    ylim(0, 1) +
+    xlim(0, 240) +
+    ggtitle(paste0('Emotion Type: ', emotion_type)) +
+    ylab("Predicted Emotion Score")
+  theme_bw()
+  
+  ggsave(filename = paste0('~/Dropbox/pkg.data/auction_emotions/Figures_regression/first_4_seconds', emotion_type, '.pdf'))
+}
+```
+
+
+```{r regressionOutput}
+x_table_regression_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/x_table_regression.rds'
+
+
+
+```
+
+
