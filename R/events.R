@@ -47,7 +47,6 @@ events <- function(file_location){
   
   dt <- dt[Event_Marker %in% 'camera start', AuctionNumber:=lead_AuctionNumber]
   dt <- dt[Event_Marker %in% 'camera start', AuctionType:=lead_AuctionType]
-  
   dt <- dt[MarkerType %in% 'final payment', AuctionNumber:=lag_AuctionNumber]
   
   # Clean and normalize seconds
@@ -61,6 +60,8 @@ events <- function(file_location){
   dt$Session <- stringr::str_extract(file_location, stringr::regex('(?<=session)[0-9]{1,2}', perl=TRUE))
   dt$Participant <- stringr::str_extract(file_location, stringr::regex('[0-9]{1,2}(?=\\.csv)'))
   dt$Participant <- stringr::str_replace(dt$Participant, stringr::regex('0(?=[0-9]{1,1}$)'), '')
+  
+  # For first price auctions, include the bid submission time
   return(dt)
 }
 

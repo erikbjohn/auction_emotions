@@ -10,7 +10,7 @@ reg_open_5 <- function(){
     dt_scores <- readRDS(dt_scores_location)
     # Time compression to quarter second intervals
     # Regression for first two seconds after value endowment
-    dt_open <- dt_scores[marker_time_elapsed <= 5]
+    dt_open <- dt_scores[marker_time_elapsed <= 5 & MarkerType=='auction']
     
     emotions <- unique(dt_open$EmotionType)
     iter <- 0

@@ -8,6 +8,7 @@ payoffs <- function(){
     full_payoffs <- list()
     for(i_file in 1:nrow(dt_files)){
       session <- dt_files[i_file]$session
+      cat(session)
       f_lines <- readLines(dt_files[i_file]$payoff_f_path)
       
       l_lines <-stringr::str_split(f_lines, '\\\t')
@@ -37,7 +38,7 @@ payoffs <- function(){
       payoffs$first_price <- payoffs$first_price[, .(Session, AuctionType='first_price', 
                                                      AuctionNumber, AuctionTypeOrder, 
                                                      Participant, Group, 
-                                                     TimeToBid = 60-as.integer(TimeSubmitBidDecisionOK), 
+                                                     TimeToBid = 30-as.integer(TimeSubmitBidDecisionOK), 
                                                      Winner=as.integer(Winner),
                                                      Value=as.integer(Value),
                                                      BidActual=as.integer(Bid),
@@ -59,12 +60,13 @@ payoffs <- function(){
                                    dutch = payoffs$dutch)
       names(full_payoffs)[i_file] <- paste0('Session', session)
     }
+    l <- list()
     l$first_price <- rbindlist(lapply(full_payoffs, '[[', which(names(full_payoffs[[1]])=='first_price')))
     l$dutch <- rbindlist(lapply(full_payoffs, '[[', which(names(full_payoffs[[1]])=='dutch')))
     l$dutch <- l$dutch[TimeToBid>0, Winner:=1][TimeToBid==0, Winner:=0]
     dt<-rbindlist(l, use.names = TRUE, fill=TRUE)
     saveRDS(dt, payoffs_location)
-   }else {
+   } else {
     dt <- readRDS(payoffs_location)
    }
    return(dt)
