@@ -65,6 +65,9 @@ payoffs <- function(){
     l$dutch <- rbindlist(lapply(full_payoffs, '[[', which(names(full_payoffs[[1]])=='dutch')))
     l$dutch <- l$dutch[TimeToBid>0, Winner:=1][TimeToBid==0, Winner:=0]
     dt<-rbindlist(l, use.names = TRUE, fill=TRUE)
+    # Fix the time to bid issue in the dutch auctions
+    dt <- dt[, TimeToBid:=as.numeric(TimeToBid)]
+    dt <- dt[Winner==1 & AuctionType=='dutch', TimeToBid := ((240-as.integer(Price))/3)*.5]
     saveRDS(dt, payoffs_location)
    } else {
     dt <- readRDS(payoffs_location)

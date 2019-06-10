@@ -1,4 +1,6 @@
-events <- function(file_location){
+events <- function(file_location){ 
+  events_location <- '~/Dropbox/pkg.data/auction_emotions/Raw/events.rds'
+  if(!file.exists(events_location)){
   source('R/lube_time.R')
   source('R/extract_marker_info.R')
   library(data.table)
@@ -60,7 +62,11 @@ events <- function(file_location){
   dt$Session <- stringr::str_extract(file_location, stringr::regex('(?<=session)[0-9]{1,2}', perl=TRUE))
   dt$Participant <- stringr::str_extract(file_location, stringr::regex('[0-9]{1,2}(?=\\.csv)'))
   dt$Participant <- stringr::str_replace(dt$Participant, stringr::regex('0(?=[0-9]{1,1}$)'), '')
-  
+  dt <- dt[nrow(dt_events), event_end:= dt_emotions[nrow(dt_emotions)]$snap_end]
+  saveRDS(dt, events_location)
+  } else {
+    dt <- readRDS(events_location)
+  }
   # For first price auctions, include the bid submission time
   return(dt)
 }

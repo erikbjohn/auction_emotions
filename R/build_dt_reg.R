@@ -2,21 +2,62 @@ build_dt_reg <- function(dt=NULL){
   # Converts the full, raw dataset into regression usable format
   source('R/build_events_emotions_payoffs.R')
   dt_reg_base_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_reg_base.rds'
-  dt_scores_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_scores.rds'
+  dt_seconds_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds' # Data aggregated at the average emotion by second
   figures_location <- '~/Dropbox/pkg.data/auction_emotions/Figures_regression/'
   l_reg <- list()
   if(!file.exists(dt_reg_location)){
-      if(!(file.exists(dt_scores_location))){
-        if(is.null(dt)){
+      if(!(file.exists(dt_seconds_location))){
         dt <- build_events_emotions_payoffs()
+        dt_seconds <- dt[, .(Score_num=mean(Score_num,na.rm = TRUE)),
+                         by=c('participant_id', 'marker_sec_elapsed', 'Session', 'Participant', 'AuctionType', 'AuctionNumber', 'MarkerType', 'EmotionType',
+                              'AuctionTypeOrder', 'Group',  'TimeToBid', 'Winner', 'Value', 'BidActual', 'BidNash', 'Price', 'Profit')]
+        dt_seconds <- dt_seconds[is.na(Score_num), na_score_num:=1][!is.na(Score_num), na_score_num:=0]
+        # Create plots to check consistency of NA results
+        dt_combs <- as.data.table(expand.grid(unique(dt_seconds$AuctionType), unique(dt_seconds$MarkerType), stringsAsFactors = FALSE))
+        setnames(dt_combs, c('AuctionType', 'MarkerType'))
+        for(iComb in 1:nrow(dt_combs)){
+          s_AuctionType <- dt_combs[iComb]$AuctionType
+          s_MarkerType <- dt_combs[iComb]$MarkerType
+          dt_plot <- dt_seconds[EmotionType=='Neutral' & AuctionType==s_AuctionType & MarkerType==s_MarkerType]
+          dt_plot <- dt_plot[, n_row_plot := .N, by = marker_sec_elapsed][,n_na := sum(na_score_num), by=marker_sec_elapsed]
+          dt_plot <- dt_plot[, .SD[1], by=marker_sec_elapsed]
+          dt_plot <- dt_plot[, .(share_na=n_na/n_row_plot, n_row_plot, n_na), by=(marker_sec_elapsed)]
+          setkey(dt_plot, marker_sec_elapsed)
+          dt_plot <- dt_plot[, n_total := sum(n_row_plot)]
+          dt_plot <- dt_plot[, n_cum_sum := cumsum(n_row_plot)]
+          dt_plot <- dt_plot[, cum_share := n_cum_sum/n_total]
+          dt_plot <- dt_plot[cum_share < 0.95]
+          dt_plot <- dt_plot[, share_na:=n_na/n_row_plot]
+          f_name <- paste0('~/Dropbox/pkg.data/auction_emotions/no_score_timing_figures/', s_AuctionType, '_', s_MarkerType, '_timing.jpg')
+          ggplot2::ggplot(dt_plot, aes(marker_sec_elapsed, share_na)) +
+            geom_line() +
+            ylim(0, 1) +
+            ggtitle(paste(' AuctionType:', s_AuctionType, '\n', 'MarkerType:', s_MarkerType, '\n', 'First seconds containing 95% of all observations'))
+          ggsave(f_name)
         }
-        dt <- dt[, marker_start:=min(snap_start), by=c('Session', 'Participant', 'AuctionType', 'AuctionNumber', 'MarkerType')]
-        dt <- dt[, marker_time_elapsed := snap_start-marker_start]
-        dt_scores <- dt[!is.na(Score_num)]
-        dt_scores <- dt_scores[, participant_id := paste0(Session, '_', Participant)]
-        saveRDS(dt_scores, dt_scores_location)
+        
+        # Now, for first price and dutch auctions, look at missing by endowment value
+       # dt_combs <- dt_combs[MarkerType=='auction']
+        for(iComb in 1:nrow(dt_combs)){
+          s_AuctionType <- dt_combs[iComb]$AuctionType
+          s_MarkerType <- dt_combs[iComb]$MarkerType
+          dt_plot <- dt_seconds[EmotionType=='Neutral' & AuctionType==s_AuctionType & MarkerType==s_MarkerType]
+          dt_plot <- dt_plot[, n_row_value := .N, by = Value][,n_row_na_value := sum(na_score_num), by=Value]
+          dt_plot <- dt_plot[, share_na_value := n_row_na_value/n_row_value]
+          dt_plot <- unique(dt_plot[, .(Value, share_na_value)])
+          setkey(dt_plot,Value)
+          f_name <- paste0('~/Dropbox/pkg.data/auction_emotions/no_score_value_figures/', s_AuctionType, '_', s_MarkerType, '_values.jpg')
+          ggplot2::ggplot(dt_plot, aes(Value, share_na_value)) +
+            geom_line() +
+            ylim(0, 1) +
+            ggtitle(paste(' AuctionType:', s_AuctionType, '\n', 'MarkerType:', s_MarkerType, '\n'))
+          ggsave(f_name)
+        }
+        
+         saveRDS(dt_seconds, dt_seconds_location)
       } else {
         dt_scores <- readRDS(dt_scores_location)
+        dt_seconds <- readRDS(dt_seconds_location)
       }
       # Time compression to quarter second intervals
       time_start <- 0
