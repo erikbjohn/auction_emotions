@@ -1,0 +1,71 @@
+---
+title: 'Memo: Value Allocation Response'
+author: "Johnson"
+date: "9/18/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+```
+
+# Background
+
+This memo describes the auction emotion responses to the value allocation.
+
+Analysis is as follows:
+
+1. Emotional response to value allocation (not controlling for value) for 1, 2, 3, 4 seconds after the value allocation. (Including aggregate and snapshot seconds)
+2. Emotional response to value allocation by Value quartile (and seconds in 1)
+3. Emotional response to vlaue allocation regression with individual fixed effects.
+
+# Emotion response to value allocation
+
+```{r}
+
+l_seconds_dts <- list()
+
+l_seconds_dts$one_second <- dt_seconds[MarkerType=='auction' & marker_sec_elapsed <= 1 & !is.na(Score_num)]
+l_seconds_dts$first_two_seconds <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed <= 2 &
+                                                 !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+l_seconds_dts$first_three_seconds <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed <= 3 &
+                                                 !is.na(Score_num)][,Score_num:=mean(Score_num),
+                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+l_seconds_dts$first_four_seconds <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed <= 4 &
+                                                 !is.na(Score_num)][,Score_num:=mean(Score_num),
+                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+l_seconds_dts$second_one <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed == 1 &
+                                                 !is.na(Score_num)]
+l_seconds_dts$second_two <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed == 2 &
+                                                 !is.na(Score_num)]
+l_seconds_dts$second_three <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed == 3 &
+                                                 !is.na(Score_num)]
+l_seconds_dts$second_four <- dt_seconds[MarkerType=='auction' &
+                                                 marker_sec_elapsed == 4 &
+                                                 !is.na(Score_num)]
+
+
+# Create t-test
+emotions <- unique(dt_first_two$EmotionType)
+l <- list()
+for(iEmotion in 1:length(emotions)){
+  sEmotion <- emotions[iEmotion]
+  t_test <- t.test(dt_first_two[AuctionType=='first_price' & EmotionType %in% sEmotion]$Score_num,
+                   dt_first_two[AuctionType=='dutch' & EmotionType %in% sEmotion]$Score_num, var.equal = FALSE)
+  dt_ttest <- data.table(emotion = sEmotion,
+                         mean_first_price = t_test$estimate[1],
+                         mean_dutch = t_test$estimate[2],
+                         t_stat = t_test$statistic,
+                         p_value = t_test$p.value)
+  l[[iEmotion]] <- dt_ttest
+}
+    dt_emotion_first_two_seconds <- data.table::rbindlist(l, use.names=TRUE, fill=TRUE)
+```

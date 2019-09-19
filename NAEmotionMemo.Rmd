@@ -1,0 +1,105 @@
+---
+title: "NA Emotion Memo"
+author: "Johnson"
+date: "9/18/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(data.table)
+library(ggplot2)
+library(knitr)
+```
+
+```{r cache=TRUE}
+dt <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+n_nas <- nrow(dt[is.na(Score_num)])
+n_rows <- nrow(dt)
+pct_na <- round((n_nas/n_rows),3)*100
+```
+
+# Description
+
+`r pct_na`% of all second observations have an NA emotion (the user was out of the frame). This memo double checks if there is are any important correlations associated with the NAs. This includes an analysis of user specific NAs (are some user out of the frame more than others) and Value scores (do users move out of the frame when they are feeling more emotions?)
+ 
+# User analysis
+
+Users stats by share of all seconds that have an na emotion score
+
+```{r, cache=TRUE}
+dt_users <- dt[, n_seconds:=.N, by=participant_id]
+dt_users <- dt_users[is.na(Score_num)]
+dt_users <- dt_users[,n_seconds_na:=.N, by=participant_id]
+dt_users <- dt_users[, .SD[1], by=participant_id]
+dt_users <- dt_users[, share_na:=n_seconds_na/n_seconds]
+```
+
+```{r }
+library(ggplot2)
+ggplot(data=dt_users, aes(share_na)) + geom_histogram(bins = 50) + theme_bw() + ylab('Count of Users') + xlab('Share of Seconds with NA')
+```
+
+\clearpage
+
+# Event Analysis
+
+Possible that users move during certain events. Here we focus on marker type.
+
+```{r, results='asis'}
+dt_events <- dt[, n_seconds:=.N, by=MarkerType]
+dt_events <- dt_events[, n_na_seconds:=sum(na_score_num), by=MarkerType]
+dt_events <- dt_events[, share_na:=n_na_seconds/n_seconds]
+dt_events <- unique(dt_events[, .(MarkerType, `Share NA`=round(share_na,3))])
+dt_events <- dt_events[order(-`Share NA`)]
+
+kable(dt_events, caption="Event (Marker Type) by share na seconds")
+```
+
+# Auction Type Analysis
+
+```{r, results='asis'}
+dt_auction <- dt[, n_seconds:=.N, by=AuctionType]
+dt_auction <- dt_auction[, n_na_seconds:=sum(na_score_num), by=AuctionType]
+dt_auction <- dt_auction[, share_na:=n_na_seconds/n_seconds]
+dt_auction <- unique(dt_auction[, .(AuctionType, `Share NA`=round(share_na,3))])
+dt_auction <- dt_auction[order(-`Share NA`)]
+
+kable(dt_auction, caption="Auction Type by share na seconds")
+
+```
+
+# Auction and Event Analysis
+
+```{r, results='asis'}
+dt_auction_events <- dt[, n_seconds:=.N, by=.(AuctionType, MarkerType)]
+dt_auction_events <- dt_auction_events[, n_na_seconds:=sum(na_score_num), by=.(AuctionType, MarkerType)]
+dt_auction_events <- dt_auction_events[, share_na:=n_na_seconds/n_seconds]
+dt_auction_events <- unique(dt_auction_events[, .(AuctionType, MarkerType, `Share NA`=round(share_na,3))])
+dt_auction_events <- dt_auction_events[order(-`Share NA`)]
+dt_auction_events <- dcast(dt_auction_events, MarkerType ~ AuctionType, value.var = 'Share NA')
+dt_auction_events <- dt_auction_events[, diff:=first_price-dutch][, .(MarkerType, first_price, dutch, diff)]
+dt_auction_events <- dt_auction_events[order(-diff)]
+kable(dt_auction_events, caption="Auction Type and Marker Type by share na seconds")
+```
+
+Some explaination: In the first price auction the \textit{transition} period is simply waiting for others/other groups to finish and submit their bid. The winner is not announced until the \textit{info} period. In Dutch, the \textit{transition} period is again waiting for other groups to finish but the winner should know if they have won the auction. Therefore, the relatively higher na results in the \textit{first price} auction relative to \textit{dutch} reflect engagment levels.
+
+\clearpage
+
+# Examine NA by type
+
+This data comes from dt_scores.
+
+First examine the relationship between share_na and share_na_fit_failed. Does not look very convincing.
+
+```{r}
+source('R/analysis_na.R')
+dt_na_analysis <- analysis_na()
+dt_na_analysis <- dt_na_analysis[!is.na(share_na)]
+ggplot(dt_na_analysis, aes(x=share_na, y=share_na_fit_failed)) + geom_point()
+```
+
+```{r}
+ggplot(dt_na_analysis, aes(x=share_na, y=share_na_find_failed)) + geom_point()
+```

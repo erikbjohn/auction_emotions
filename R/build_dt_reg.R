@@ -3,6 +3,7 @@ build_dt_reg <- function(dt=NULL){
   source('R/build_events_emotions_payoffs.R')
   dt_reg_base_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_reg_base.rds'
   dt_seconds_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds' # Data aggregated at the average emotion by second
+  dt_scores_location <- '~/Dropbox/pkg.data/auction_emotions/Clean/dt_scores.rds'
   figures_location <- '~/Dropbox/pkg.data/auction_emotions/Figures_regression/'
   l_reg <- list()
   if(!file.exists(dt_reg_location)){
@@ -59,6 +60,86 @@ build_dt_reg <- function(dt=NULL){
         dt_scores <- readRDS(dt_scores_location)
         dt_seconds <- readRDS(dt_seconds_location)
       }
+      
+    table(dt_seconds[, .(AuctionType, MarkerType)])
+    # Clean up TimeToBid for Sessions 5, 6, 7, 8
+    dt_seconds <- dt_seconds[AuctionType=='first_price' & Session %in% c(5, 6, 7, 8), TimeToBid:=TimeToBid+30]
+    
+    table(dt_seconds[AuctionType=='first_price', .(TimeToBid), by=Session])
+    table(dt_seconds[AuctionType=='dutch', .(TimeToBid), by=Session])
+    dt_time_to_bid <- dt_seconds[AuctionType=='first_price' & EmotionType == 'Neutral']
+    dt_time_to_bid <- dt_time_to_bid[, .SD[1], by=c('participant_id', 'AuctionNumber')]
+    
+    ggplot(dt_time_to_bid[TimeToBid <100], aes(x=TimeToBid, fill=AuctionTypeOrder)) +
+      geom_histogram(position='dodge2') +      theme_bw()
+    
+    dt_seconds <- dt_seconds[, marker_sec_elapsed_max := max(marker_sec_elapsed),
+                             by=.(participant_id, MarkerType, AuctionType, AuctionNumber)]
+    
+    # First 2 seconds 
+    dt_first_two <- dt_seconds[MarkerType=='auction' & marker_sec_elapsed <= 2 & !is.na(Score_num)]
+    
+    # Create t-test
+    emotions <- unique(dt_first_two$EmotionType)
+    l <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      t_test <- t.test(dt_first_two[AuctionType=='first_price' & EmotionType %in% sEmotion]$Score_num,
+                       dt_first_two[AuctionType=='dutch' & EmotionType %in% sEmotion]$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(emotion = sEmotion,
+                             mean_first_price = t_test$estimate[1],
+                             mean_dutch = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      l[[iEmotion]] <- dt_ttest
+    }
+    dt_emotion_first_two_seconds <- data.table::rbindlist(l, use.names=TRUE, fill=TRUE)
+    saveRDS(dt_emotion, '~/Dropbox/pkg.data/auction_emotions/Clean/dt_first_two_seconds.rds')
+    
+    # Feedback (results 2 seconds or less out)
+    dt_feedback_dutch <- dt_seconds[AuctionType=='dutch' & MarkerType=='transition' & marker_sec_elapsed <= 2 & !is.na(Score_num)]
+    dt_feedback_first_price <- dt_seconds[AuctionType=='first_price' & MarkerType=='info' & marker_sec_elapsed <=2 & !is.na(Score_num)]
+    emotions <- unique(dt_first_two$EmotionType)
+    l <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      t_test <- t.test(dt_feedback_first_price[EmotionType %in% sEmotion]$Score_num,
+                       dt_feedback_dutch[EmotionType %in% sEmotion]$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(emotion = sEmotion,
+                             mean_first_price = t_test$estimate[1],
+                             mean_dutch = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      l[[iEmotion]] <- dt_ttest
+    }
+    dt_emotion_two_seconds_results <- data.table::rbindlist(l, use.names=TRUE, fill=TRUE)
+    saveRDS(dt_emotion_two_seconds_results, '~/Dropbox/pkg.data/auction_emotions/Clean/dt_emotion_two_seconds_results.rds')  
+    fwrite(dt_emotion_two_seconds_results, '~/Dropbox/pkg.data/auction_emotions/Clean/dt_emotion_two_seconds_results.csv')
+    
+    
+    # Auction Phase
+    dt_auction_dutch <- dt_seconds[AuctionType=='dutch' & MarkerType=='auction' & !is.na(Score_num)]
+    dt_auction_first_price <- dt_seconds[AuctionType=='first_price' & MarkerType=='info' & !is.na(Score_num)]
+    emotions <- unique(dt_first_two$EmotionType)
+    l <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      t_test <- t.test(dt_auction_first_price[EmotionType %in% sEmotion]$Score_num,
+                       dt_auction_dutch[EmotionType %in% sEmotion]$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(emotion = sEmotion,
+                             mean_first_price = t_test$estimate[1],
+                             mean_dutch = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      l[[iEmotion]] <- dt_ttest
+    }
+    dt_emotion_auction <- data.table::rbindlist(l, use.names=TRUE, fill=TRUE)
+    saveRDS(dt_emotion_auction, '~/Dropbox/pkg.data/auction_emotions/Clean/dt_emotion_auction_results.rds')  
+    fwrite(dt_emotion_auction, '~/Dropbox/pkg.data/auction_emotions/Clean/dt_emotion_auction_results.csv')
+    
+    
+    
+    
       # Time compression to quarter second intervals
       time_start <- 0
       time_end <- 40

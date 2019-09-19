@@ -81,7 +81,7 @@ analysis_auction_order_and_type <- function(){
           dt_nash$AuctionType <- 'nash'
           
           dt <- rbindlist(list(dt_dutch, dt_fp, dt_nash), use.names = TRUE, fill=TRUE)
-          p <- ggplot(dt, aes(x=as.factor(BidNash), y=BidActual)) +
+          p <- ggplot(dt, aes(x=Value, y=BidActual)) +
             geom_boxplot(aes(fill=AuctionType), outlier.size = 0.1) +
             geom_line(aes(x=as.factor(BidNash), y=BidNash)) + 
             theme_bw()
