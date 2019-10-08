@@ -13,6 +13,15 @@ build_dt_reg <- function(dt=NULL){
                          by=c('participant_id', 'marker_sec_elapsed', 'Session', 'Participant', 'AuctionType', 'AuctionNumber', 'MarkerType', 'EmotionType',
                               'AuctionTypeOrder', 'Group',  'TimeToBid', 'Winner', 'Value', 'BidActual', 'BidNash', 'Price', 'Profit')]
         dt_seconds <- dt_seconds[is.na(Score_num), na_score_num:=1][!is.na(Score_num), na_score_num:=0]
+        
+        dt_seconds$InTheMoney <- 0
+        dt_seconds <- dt_seconds[Value>=Price, InTheMoney := 1]
+        dt_seconds$Result <- 'Winner and In the Money'
+        dt_seconds <- dt_seconds[Winner==1 & InTheMoney==0, Result:='Winner and Not In the Money']
+        dt_seconds <- dt_seconds[Winner==0 & InTheMoney==0, Result:='Loser and Not In the Money']
+        dt_seconds <- dt_seconds[Winner==0 & InTheMoney==1, Result:='Loser and In the Money']
+
+        saveRDS(dt_seconds, dt_seconds_location)
         # Create plots to check consistency of NA results
         dt_combs <- as.data.table(expand.grid(unique(dt_seconds$AuctionType), unique(dt_seconds$MarkerType), stringsAsFactors = FALSE))
         setnames(dt_combs, c('AuctionType', 'MarkerType'))
@@ -54,8 +63,7 @@ build_dt_reg <- function(dt=NULL){
             ggtitle(paste(' AuctionType:', s_AuctionType, '\n', 'MarkerType:', s_MarkerType, '\n'))
           ggsave(f_name)
         }
-        
-         saveRDS(dt_seconds, dt_seconds_location)
+       
       } else {
         dt_scores <- readRDS(dt_scores_location)
         dt_seconds <- readRDS(dt_seconds_location)

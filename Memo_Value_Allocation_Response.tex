@@ -1,0 +1,509 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Memo: Value Allocation Response},
+            pdfauthor={Johnson},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Memo: Value Allocation Response}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Johnson}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{9/18/2019}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\usepackage{booktabs}
+
+\begin{document}
+\maketitle
+
+\hypertarget{background}{%
+\section{Background}\label{background}}
+
+This memo describes the auction emotion responses to the value
+allocation.
+
+Analysis is as follows:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Emotional response to value allocation (not controlling for value) for
+  1, 2, 3, 4 seconds after the value allocation. (Including aggregate
+  and snapshot seconds)
+\item
+  Emotional response to value allocation by Value quartile (and seconds
+  in 1)
+\item
+  Emotional response to vlaue allocation regression with individual
+  fixed effects.
+\end{enumerate}
+
+\hypertarget{emotion-response-to-value-allocation}{%
+\section{Emotion response to value
+allocation}\label{emotion-response-to-value-allocation}}
+
+These are tables.
+
+\begin{table}[!htb] 
+
+\caption{Emotional Response to Value Allocation: Auction Type and Time Analysis (part 1/2)} 
+
+\label{tab:emotionalResponse2} 
+
+\centering 
+
+\begingroup 
+
+\scriptsize 
+
+\begin{tabular}{lrrrrrrr} 
+
+\toprule
+\emph{First Price} & \multicolumn{7}{c}{\emph{Dutch}} \\ 
+
+\cmidrule(lr){2-8} 
+ & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\leq 2$ & $\leq 3$ & $\leq 4$ \\ 
+
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel A: Neutral}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.064*** & -0.024    & 0.001     & 0.019     & -0.045*** & -0.03**   & -0.019    \\ 
+  $1-2$ & -0.087*** & -0.048*** & -0.023    & -0.006    & -0.068*** & -0.054*** & -0.043*** \\ 
+  $2-3$ & -0.13***  & -0.093*** & -0.069*** & -0.053*** & -0.112*** & -0.098*** & -0.088*** \\ 
+  $3-4$ & -0.145*** & -0.109*** & -0.085*** & -0.069*** & -0.127*** & -0.114*** & -0.103*** \\ 
+$\leq 2$ & -0.076*** & -0.037*** & -0.011    & 0.006     & -0.057*** & -0.042*** & -0.031*** \\ 
+$\leq 3$ & -0.094*** & -0.055*** & -0.03**   & -0.014    & -0.075*** & -0.061*** & -0.05***  \\ 
+$\leq 4$ & -0.107*** & -0.069*** & -0.044*** & -0.028**  & -0.088*** & -0.074*** & -0.063*** \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel B: Happy}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.315***  & 0.229***  & 0.053     & 0.058     & 0.27***   & 0.189***  & 0.155**   \\ 
+  $1-2$ & 0.443***  & 0.349***  & 0.156**   & 0.162**   & 0.394***  & 0.306***  & 0.268***  \\ 
+  $2-3$ & 0.526***  & 0.426***  & 0.222***  & 0.228***  & 0.474***  & 0.38***   & 0.34***   \\ 
+  $3-4$ & 0.412***  & 0.32***   & 0.132*    & 0.137*    & 0.365***  & 0.278***  & 0.241***  \\ 
+$\leq 2$ & 0.38***   & 0.29***   & 0.105     & 0.111*    & 0.333***  & 0.248***  & 0.212***  \\ 
+$\leq 3$ & 0.428***  & 0.335***  & 0.145**   & 0.15**    & 0.38***   & 0.292***  & 0.255***  \\ 
+$\leq 4$ & 0.424***  & 0.332***  & 0.141**   & 0.147**   & 0.376***  & 0.289***  & 0.251***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel C: Sad}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.045    & -0.01     & -0.043    & -0.046    & -0.028    & -0.033    & -0.036    \\ 
+  $1-2$ & -0.028    & 0.007     & -0.026    & -0.03     & -0.011    & -0.016    & -0.019    \\ 
+  $2-3$ & -0.024    & 0.011     & -0.022    & -0.026    & -0.007    & -0.012    & -0.015    \\ 
+  $3-4$ & -0.079    & -0.046    & -0.078    & -0.081    & -0.063    & -0.068    & -0.071    \\ 
+$\leq 2$ & -0.036    & -0.002    & -0.035    & -0.038    & -0.019    & -0.024    & -0.028    \\ 
+$\leq 3$ & -0.032    & 0.002     & -0.031    & -0.034    & -0.015    & -0.02     & -0.024    \\ 
+$\leq 4$ & -0.044    & -0.01     & -0.042    & -0.045    & -0.027    & -0.032    & -0.035    \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel D: Angry}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.021     & -0.042    & -0.049    & -0.073**  & -0.012    & -0.024    & -0.037    \\ 
+  $1-2$ & 0.04      & -0.025    & -0.031    & -0.056*   & 0.006     & -0.006    & -0.019    \\ 
+  $2-3$ & 0.075**   & 0.009     & 0.002     & -0.024    & 0.041     & 0.028     & 0.015     \\ 
+  $3-4$ & 0.138***  & 0.067**   & 0.06*     & 0.033     & 0.101***  & 0.087***  & 0.074***  \\ 
+$\leq 2$ & 0.03      & -0.033    & -0.04     & -0.065**  & -0.003    & -0.015    & -0.028    \\ 
+$\leq 3$ & 0.045*    & -0.019    & -0.026    & -0.051**  & 0.012     & -0.001    & -0.013    \\ 
+$\leq 4$ & 0.068**   & 0.002     & -0.004    & -0.03     & 0.034*    & 0.021     & 0.008     \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel E: Surprised}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.168***  & 0.202***  & 0.207***  & 0.209***  & 0.185***  & 0.192***  & 0.196***  \\ 
+  $1-2$ & 0.124**   & 0.157***  & 0.162***  & 0.164***  & 0.141***  & 0.148***  & 0.152***  \\ 
+  $2-3$ & 0.089*    & 0.121**   & 0.126**   & 0.128**   & 0.105**   & 0.112**   & 0.116***  \\ 
+  $3-4$ & 0.059     & 0.091*    & 0.095*    & 0.097*    & 0.075     & 0.081*    & 0.085*    \\ 
+$\leq 2$ & 0.146***  & 0.18***   & 0.184***  & 0.186***  & 0.163***  & 0.17***   & 0.174***  \\ 
+$\leq 3$ & 0.127***  & 0.16***   & 0.165***  & 0.167***  & 0.143***  & 0.15***   & 0.154***  \\ 
+$\leq 4$ & 0.11***   & 0.143***  & 0.147***  & 0.149***  & 0.126***  & 0.133***  & 0.137***  \\ 
+\bottomrule 
+
+\end{tabular} 
+
+\begin{minipage}{\textwidth}
+\footnotesize
+\vspace{0.25cm}
+\emph{Notes:} Table Values represent (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)
+\end{minipage}
+\endgroup
+\end{table}
+
+\begin{table}[!htb] 
+
+\caption{Emotional Response to Value Allocation: Auction Type and Time Analysis (part 2/2)} 
+
+\label{tab:emotionalResponse} 
+
+\centering 
+
+\begingroup 
+
+\scriptsize 
+
+\begin{tabular}{lrrrrrrr} 
+
+\toprule
+\emph{First Price} & \multicolumn{7}{c}{\emph{Dutch}} \\ 
+
+\cmidrule(lr){2-8} 
+ & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\leq 2$ & $\leq 3$ & $\leq 4$ \\ 
+
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel F: Scared}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.715***  & 0.81***   & 0.668***  & 0.733***  & 0.761***  & 0.729***  & 0.73***   \\ 
+  $1-2$ & 0.518***  & 0.603***  & 0.477***  & 0.535***  & 0.56***   & 0.531***  & 0.532***  \\ 
+  $2-3$ & 0.429***  & 0.509***  & 0.39***   & 0.445***  & 0.468***  & 0.442***  & 0.442***  \\ 
+  $3-4$ & 0.318**   & 0.392**   & 0.282*    & 0.333**   & 0.354**   & 0.33**    & 0.33***   \\ 
+$\leq 2$ & 0.615***  & 0.705***  & 0.571***  & 0.633***  & 0.659***  & 0.629***  & 0.63***   \\ 
+$\leq 3$ & 0.553***  & 0.64***   & 0.511***  & 0.57***   & 0.596***  & 0.567***  & 0.567***  \\ 
+$\leq 4$ & 0.495***  & 0.578***  & 0.454***  & 0.511***  & 0.536***  & 0.508***  & 0.509***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel G: Disgusted}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.212***  & 0.034     & 0.029     & 0.01      & 0.115**   & 0.085*    & 0.066     \\ 
+  $1-2$ & 0.253***  & 0.069     & 0.065     & 0.045     & 0.154***  & 0.123**   & 0.103**   \\ 
+  $2-3$ & 0.508***  & 0.287***  & 0.281***  & 0.257***  & 0.388***  & 0.35***   & 0.327***  \\ 
+  $3-4$ & 0.55***   & 0.323***  & 0.317***  & 0.293***  & 0.427***  & 0.389***  & 0.364***  \\ 
+$\leq 2$ & 0.233***  & 0.052     & 0.047     & 0.028     & 0.135***  & 0.104***  & 0.085**   \\ 
+$\leq 3$ & 0.325***  & 0.13***   & 0.125***  & 0.105**   & 0.219***  & 0.186***  & 0.165***  \\ 
+$\leq 4$ & 0.381***  & 0.178***  & 0.173***  & 0.151***  & 0.271***  & 0.236***  & 0.215***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel H: Contempt}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.024    & 0.004     & 0.001     & 0.007     & -0.01     & -0.007    & -0.003    \\ 
+  $1-2$ & 0.031     & 0.061*    & 0.058     & 0.064*    & 0.046     & 0.05*     & 0.053*    \\ 
+  $2-3$ & 0.046     & 0.076**   & 0.073**   & 0.08**    & 0.061**   & 0.065**   & 0.069**   \\ 
+  $3-4$ & 0.059     & 0.09**    & 0.087**   & 0.093**   & 0.074**   & 0.078**   & 0.082***  \\ 
+$\leq 2$ & 0.004     & 0.033     & 0.03      & 0.036     & 0.018     & 0.022     & 0.025     \\ 
+$\leq 3$ & 0.018     & 0.047*    & 0.045     & 0.051*    & 0.032     & 0.036*    & 0.04**    \\ 
+$\leq 4$ & 0.028     & 0.058**   & 0.055**   & 0.061**   & 0.043**   & 0.047***  & 0.05***   \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel I: Valence}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.023     & -0.031    & -0.021    & -0.045    & -0.005    & -0.01     & -0.019    \\ 
+  $1-2$ & 0.015     & -0.038    & -0.029    & -0.053*   & -0.012    & -0.018    & -0.027    \\ 
+  $2-3$ & 0.072**   & 0.016     & 0.025     & 0         & 0.043     & 0.037     & 0.028     \\ 
+  $3-4$ & 0.126***  & 0.067**   & 0.077**   & 0.051     & 0.096***  & 0.089***  & 0.08***   \\ 
+$\leq 2$ & 0.019     & -0.034    & -0.025    & -0.049*   & -0.009    & -0.014    & -0.023    \\ 
+$\leq 3$ & 0.037     & -0.018    & -0.008    & -0.032    & 0.009     & 0.003     & -0.006    \\ 
+$\leq 4$ & 0.059**   & 0.003     & 0.013     & -0.012    & 0.03*     & 0.024     & 0.015     \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel J: Arousal}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.025*** & -0.025*** & -0.012    & -0.009    & -0.025*** & -0.021*** & -0.018**  \\ 
+  $1-2$ & -0.012    & -0.013    & 0.001     & 0.004     & -0.013*   & -0.008    & -0.005    \\ 
+  $2-3$ & -0.027*** & -0.028*** & -0.014    & -0.011    & -0.027*** & -0.023*** & -0.02***  \\ 
+  $3-4$ & -0.035*** & -0.036*** & -0.022**  & -0.019**  & -0.035*** & -0.031*** & -0.028*** \\ 
+$\leq 2$ & -0.018**  & -0.019*** & -0.005    & -0.003    & -0.019*** & -0.014*** & -0.012**  \\ 
+$\leq 3$ & -0.021*** & -0.022*** & -0.008    & -0.005    & -0.022*** & -0.017*** & -0.014*** \\ 
+$\leq 4$ & -0.025*** & -0.025*** & -0.012*   & -0.009    & -0.025*** & -0.021*** & -0.018*** \\ 
+\bottomrule 
+
+\end{tabular} 
+
+\begin{minipage}{\textwidth}
+\footnotesize
+\vspace{0.25cm}
+\emph{Notes:} Table Values represent  (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)
+\end{minipage}
+\endgroup
+\end{table}
+
+\hypertarget{emotional-response-to-the-end-of-the-auction-transition-phase}{%
+\section{Emotional response to the end of the auction (transition
+phase)}\label{emotional-response-to-the-end-of-the-auction-transition-phase}}
+
+\begin{table}[!htb] 
+
+\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 1/2)} 
+
+\label{tab:emotionalResponse2} 
+
+\centering 
+
+\begingroup 
+
+\scriptsize 
+
+\begin{tabular}{lrrrrrrr} 
+
+\toprule
+\emph{First Price} & \multicolumn{7}{c}{\emph{Dutch}} \\ 
+
+\cmidrule(lr){2-8} 
+ & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\leq 2$ & $\leq 3$ & $\leq 4$ \\ 
+
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel A: Neutral}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.003     & -0.043**  & -0.048*** & -0.066*** & -0.018    & -0.027*   & -0.036**  \\ 
+  $1-2$ & -0.002    & -0.048*** & -0.053*** & -0.071*** & -0.023    & -0.032**  & -0.04***  \\ 
+  $2-3$ & -0.006    & -0.052*** & -0.057*** & -0.075*** & -0.027*   & -0.036*** & -0.045*** \\ 
+  $3-4$ & 0.006     & -0.04**   & -0.045**  & -0.063*** & -0.015    & -0.024*   & -0.033**  \\ 
+$\leq 2$ & 0         & -0.045*** & -0.051*** & -0.069*** & -0.02*    & -0.029*** & -0.038*** \\ 
+$\leq 3$ & -0.002    & -0.048*** & -0.053*** & -0.071*** & -0.023**  & -0.032*** & -0.04***  \\ 
+$\leq 4$ & 0         & -0.046*** & -0.051*** & -0.069*** & -0.021**  & -0.03***  & -0.038*** \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel B: Happy}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.065     & 0.012     & -0.114    & -0.083    & 0.041     & -0.01     & -0.026    \\ 
+  $1-2$ & 0.207**   & 0.146*    & 0.003     & 0.039     & 0.179**   & 0.122*    & 0.103     \\ 
+  $2-3$ & 0.329***  & 0.262***  & 0.104     & 0.144     & 0.298***  & 0.235***  & 0.214***  \\ 
+  $3-4$ & 0.393***  & 0.323***  & 0.158*    & 0.2**     & 0.362***  & 0.295***  & 0.274***  \\ 
+$\leq 2$ & 0.137*    & 0.08      & -0.055    & -0.021    & 0.111*    & 0.057     & 0.039     \\ 
+$\leq 3$ & 0.202***  & 0.141**   & -0.001    & 0.035     & 0.174***  & 0.117***  & 0.099**   \\ 
+$\leq 4$ & 0.25***   & 0.187***  & 0.039     & 0.076     & 0.221***  & 0.162***  & 0.142***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel C: Sad}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.13      & 0.137*    & 0.083     & 0.108     & 0.133*    & 0.118*    & 0.116*    \\ 
+  $1-2$ & 0.106     & 0.113     & 0.06      & 0.084     & 0.109     & 0.094     & 0.092     \\ 
+  $2-3$ & 0.18**    & 0.187**   & 0.131     & 0.156*    & 0.183***  & 0.167**   & 0.165***  \\ 
+  $3-4$ & 0.142*    & 0.149*    & 0.094     & 0.119     & 0.145**   & 0.13**    & 0.128**   \\ 
+$\leq 2$ & 0.118*    & 0.125*    & 0.071     & 0.096     & 0.121**   & 0.106**   & 0.104**   \\ 
+$\leq 3$ & 0.139**   & 0.146**   & 0.091     & 0.116*    & 0.142***  & 0.127***  & 0.124***  \\ 
+$\leq 4$ & 0.14**    & 0.147**   & 0.092     & 0.117*    & 0.143***  & 0.128***  & 0.125***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel D: Angry}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.164*** & -0.071**  & -0.001    & 0.058     & -0.125*** & -0.092*** & -0.064**  \\ 
+  $1-2$ & -0.126*** & -0.028    & 0.045     & 0.107***  & -0.085*** & -0.051*   & -0.021    \\ 
+  $2-3$ & -0.171*** & -0.079**  & -0.01     & 0.049     & -0.133*** & -0.1***   & -0.072*** \\ 
+  $3-4$ & -0.184*** & -0.093*** & -0.025    & 0.033     & -0.146*** & -0.114*** & -0.086*** \\ 
+$\leq 2$ & -0.144*** & -0.049*   & 0.022     & 0.083**   & -0.105*** & -0.071*** & -0.042**  \\ 
+$\leq 3$ & -0.153*** & -0.059**  & 0.012     & 0.071**   & -0.114*** & -0.081*** & -0.052*** \\ 
+$\leq 4$ & -0.161*** & -0.068**  & 0.002     & 0.062**   & -0.122*** & -0.089*** & -0.061*** \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel E: Surprised}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.234***  & 0.102*    & 0.084     & 0.066     & 0.172***  & 0.145***  & 0.127***  \\ 
+  $1-2$ & 0.262***  & 0.127**   & 0.109**   & 0.09      & 0.199***  & 0.171***  & 0.153***  \\ 
+  $2-3$ & 0.234***  & 0.102*    & 0.084     & 0.065     & 0.172***  & 0.145***  & 0.127***  \\ 
+  $3-4$ & 0.185***  & 0.059     & 0.041     & 0.023     & 0.126***  & 0.1**     & 0.083*    \\ 
+$\leq 2$ & 0.248***  & 0.115**   & 0.097**   & 0.078     & 0.186***  & 0.158***  & 0.14***   \\ 
+$\leq 3$ & 0.243***  & 0.111**   & 0.092**   & 0.074     & 0.181***  & 0.154***  & 0.136***  \\ 
+$\leq 4$ & 0.229***  & 0.098**   & 0.08*     & 0.061     & 0.167***  & 0.14***   & 0.122***  \\ 
+\bottomrule 
+
+\end{tabular} 
+
+\begin{minipage}{\textwidth}
+\footnotesize
+\vspace{0.25cm}
+\emph{Notes:} Table Values represent (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)
+\end{minipage}
+\endgroup
+\end{table}
+
+\begin{table}[!htb] 
+
+\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 2/2)} 
+
+\label{tab:emotionalResponse} 
+
+\centering 
+
+\begingroup 
+
+\scriptsize 
+
+\begin{tabular}{lrrrrrrr} 
+
+\toprule
+\emph{First Price} & \multicolumn{7}{c}{\emph{Dutch}} \\ 
+
+\cmidrule(lr){2-8} 
+ & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\leq 2$ & $\leq 3$ & $\leq 4$ \\ 
+
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel F: Scared}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.428***  & 0.107     & 0.206     & 0.193     & 0.266**   & 0.248**   & 0.236**   \\ 
+  $1-2$ & 0.447***  & 0.122     & 0.222     & 0.209     & 0.283**   & 0.265**   & 0.252**   \\ 
+  $2-3$ & 0.683***  & 0.305**   & 0.422***  & 0.406**   & 0.492***  & 0.471***  & 0.457***  \\ 
+  $3-4$ & 0.693***  & 0.312**   & 0.43***   & 0.414***  & 0.501***  & 0.479***  & 0.465***  \\ 
+$\leq 2$ & 0.438***  & 0.114     & 0.214*    & 0.201     & 0.275***  & 0.256***  & 0.244***  \\ 
+$\leq 3$ & 0.521***  & 0.179*    & 0.284***  & 0.27**    & 0.348***  & 0.329***  & 0.316***  \\ 
+$\leq 4$ & 0.564***  & 0.212**   & 0.321***  & 0.306***  & 0.386***  & 0.367***  & 0.353***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel G: Disgusted}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.264***  & 0.358***  & 0.303***  & 0.336***  & 0.304***  & 0.304***  & 0.31***   \\ 
+  $1-2$ & 0.076     & 0.157**   & 0.11      & 0.138*    & 0.111*    & 0.11**    & 0.116**   \\ 
+  $2-3$ & 0.175***  & 0.263***  & 0.212***  & 0.242***  & 0.212***  & 0.212***  & 0.218***  \\ 
+  $3-4$ & 0.146**   & 0.232***  & 0.182**   & 0.212***  & 0.182***  & 0.182***  & 0.189***  \\ 
+$\leq 2$ & 0.169***  & 0.256***  & 0.205***  & 0.236***  & 0.206***  & 0.205***  & 0.212***  \\ 
+$\leq 3$ & 0.171***  & 0.258***  & 0.207***  & 0.238***  & 0.208***  & 0.208***  & 0.214***  \\ 
+$\leq 4$ & 0.165***  & 0.252***  & 0.201***  & 0.231***  & 0.201***  & 0.201***  & 0.208***  \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel H: Contempt}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & 0.037     & 0.011     & -0.049    & -0.078**  & 0.025     & 0.002     & -0.016    \\ 
+  $1-2$ & 0.041     & 0.015     & -0.046    & -0.075*   & 0.029     & 0.006     & -0.012    \\ 
+  $2-3$ & 0.07*     & 0.042     & -0.02     & -0.05     & 0.058*    & 0.034     & 0.015     \\ 
+  $3-4$ & 0.073*    & 0.046     & -0.017    & -0.047    & 0.061*    & 0.037     & 0.018     \\ 
+$\leq 2$ & 0.039     & 0.013     & -0.048    & -0.077**  & 0.027     & 0.004     & -0.014    \\ 
+$\leq 3$ & 0.05      & 0.023     & -0.038    & -0.068**  & 0.038     & 0.014     & -0.004    \\ 
+$\leq 4$ & 0.056*    & 0.028     & -0.033    & -0.062*   & 0.043*    & 0.02      & 0.001     \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel I: Valence}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.072**  & 0.033     & 0.092**   & 0.15***   & -0.029    & 0.003     & 0.032     \\ 
+  $1-2$ & -0.088*** & 0.015     & 0.073**   & 0.131***  & -0.045*   & -0.013    & 0.014     \\ 
+  $2-3$ & -0.113*** & -0.012    & 0.044     & 0.1***    & -0.071*** & -0.04     & -0.013    \\ 
+  $3-4$ & -0.137*** & -0.039    & 0.016     & 0.07*     & -0.096*** & -0.066**  & -0.04     \\ 
+$\leq 2$ & -0.08***  & 0.024     & 0.083***  & 0.14***   & -0.037*   & -0.005    & 0.023     \\ 
+$\leq 3$ & -0.091*** & 0.012     & 0.07**    & 0.127***  & -0.049**  & -0.017    & 0.011     \\ 
+$\leq 4$ & -0.103*** & -0.001    & 0.056**   & 0.112***  & -0.06***  & -0.029*   & -0.002    \\ 
+\cmidrule(lr){2-8} 
+
+& \multicolumn{7}{c}{\emph{Panel J: Arousal}}\\ 
+
+\cmidrule(lr){1-1} \cmidrule(lr){2-8}
+$0-1$ & -0.079*** & -0.102*** & -0.101*** & -0.095*** & -0.089*** & -0.093*** & -0.093*** \\ 
+  $1-2$ & -0.036*** & -0.06***  & -0.06***  & -0.053*** & -0.047*** & -0.051*** & -0.051*** \\ 
+  $2-3$ & -0.025*** & -0.049*** & -0.049*** & -0.042*** & -0.036*** & -0.04***  & -0.04***  \\ 
+  $3-4$ & -0.025*** & -0.05***  & -0.049*** & -0.042*** & -0.036*** & -0.04***  & -0.041*** \\ 
+$\leq 2$ & -0.057*** & -0.081*** & -0.08***  & -0.073*** & -0.068*** & -0.071*** & -0.072*** \\ 
+$\leq 3$ & -0.046*** & -0.07***  & -0.07***  & -0.063*** & -0.057*** & -0.061*** & -0.061*** \\ 
+$\leq 4$ & -0.041*** & -0.065*** & -0.065*** & -0.058*** & -0.052*** & -0.056*** & -0.056*** \\ 
+\bottomrule 
+
+\end{tabular} 
+
+\begin{minipage}{\textwidth}
+\footnotesize
+\vspace{0.25cm}
+\emph{Notes:} Table Values represent  (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)
+\end{minipage}
+\endgroup
+\end{table}
+
+
+\end{document}

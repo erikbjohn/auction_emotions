@@ -2,12 +2,20 @@
 title: 'Memo: Value Allocation Response'
 author: "Johnson"
 date: "9/18/2019"
-output: pdf_document
----
-
-```{r setup, include=FALSE}
+header-includes:
+  - \usepackage{booktabs}
+output: 
+  pdf_document:
+    keep_tex: true
+    md_extensions: +raw_attribute
+---    
+    
+    
+```{r setup, include=FALSE, cache=FALSE}
+library(data.table)
+library(xtable)
+library(kableExtra)
 knitr::opts_chunk$set(echo = FALSE)
-dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
 ```
 
 # Background
@@ -22,50 +30,657 @@ Analysis is as follows:
 
 # Emotion response to value allocation
 
+These are tables.
+
 ```{r}
-
-l_seconds_dts <- list()
-
-l_seconds_dts$one_second <- dt_seconds[MarkerType=='auction' & marker_sec_elapsed <= 1 & !is.na(Score_num)]
-l_seconds_dts$first_two_seconds <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed <= 2 &
-                                                 !is.na(Score_num)][,Score_num:=mean(Score_num), 
-                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
-l_seconds_dts$first_three_seconds <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed <= 3 &
-                                                 !is.na(Score_num)][,Score_num:=mean(Score_num),
-                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
-l_seconds_dts$first_four_seconds <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed <= 4 &
-                                                 !is.na(Score_num)][,Score_num:=mean(Score_num),
-                                                                    by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
-l_seconds_dts$second_one <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed == 1 &
-                                                 !is.na(Score_num)]
-l_seconds_dts$second_two <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed == 2 &
-                                                 !is.na(Score_num)]
-l_seconds_dts$second_three <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed == 3 &
-                                                 !is.na(Score_num)]
-l_seconds_dts$second_four <- dt_seconds[MarkerType=='auction' &
-                                                 marker_sec_elapsed == 4 &
-                                                 !is.na(Score_num)]
-
-
-# Create t-test
-emotions <- unique(dt_first_two$EmotionType)
-l <- list()
-for(iEmotion in 1:length(emotions)){
-  sEmotion <- emotions[iEmotion]
-  t_test <- t.test(dt_first_two[AuctionType=='first_price' & EmotionType %in% sEmotion]$Score_num,
-                   dt_first_two[AuctionType=='dutch' & EmotionType %in% sEmotion]$Score_num, var.equal = FALSE)
-  dt_ttest <- data.table(emotion = sEmotion,
-                         mean_first_price = t_test$estimate[1],
-                         mean_dutch = t_test$estimate[2],
-                         t_stat = t_test$statistic,
-                         p_value = t_test$p.value)
-  l[[iEmotion]] <- dt_ttest
+if(!file.exists('~/Dropbox/pkg.data/auction_emotions/l_dt_emotions_first.rds')){
+  dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+  l_seconds_dts <- list()
+  
+  l_seconds_dts$a_second0 <- dt_seconds[MarkerType=='auction' & marker_sec_elapsed == 0 & !is.na(Score_num)]
+  l_seconds_dts$b_second1 <- dt_seconds[MarkerType=='auction' & marker_sec_elapsed == 1 & !is.na(Score_num)]
+  l_seconds_dts$c_second2 <- dt_seconds[MarkerType=='auction' &
+                                          marker_sec_elapsed == 2 &
+                                          !is.na(Score_num)]
+  l_seconds_dts$d_second3 <- dt_seconds[MarkerType=='auction' &
+                                          marker_sec_elapsed == 3 &
+                                          !is.na(Score_num)]
+  #l_seconds_dts$e_second4 <- dt_seconds[MarkerType=='auction' &
+  #                                        marker_sec_elapsed == 4 &
+  #                                        !is.na(Score_num)]
+  
+  l_seconds_dts$f_secondlt2 <- dt_seconds[MarkerType=='auction' &
+                                            marker_sec_elapsed <= 1 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$g_secondlt3 <- dt_seconds[MarkerType=='auction' &
+                                            marker_sec_elapsed <= 2 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$h_secondlt4 <- dt_seconds[MarkerType=='auction' &
+                                            marker_sec_elapsed <= 3 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num),
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+ # l_seconds_dts$i_secondlt5 <- dt_seconds[MarkerType=='auction' &
+ #                                           marker_sec_elapsed <= 4 &
+ #                                           !is.na(Score_num)][,Score_num:=mean(Score_num),
+ #                                                              by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  #l_seconds_dts$e_second_one <- dt_seconds[MarkerType=='auction' &
+  #                                                 marker_sec_elapsed <= 1 &
+  #                                                 !is.na(Score_num)]
+  
+  # Create t-test
+  emotions <- unique(l_seconds_dts[[1]]$EmotionType)
+  auction_types <- unique(l_seconds_dts[[1]]$AuctionType)
+  combs <- expand.grid(auction_types, auction_types, names(l_seconds_dts), names(l_seconds_dts), stringsAsFactors = FALSE)
+  combs <- as.data.table(combs)
+  names(combs) <- c('auction1', 'auction2', 'time1', 'time2')
+  combs <- combs[auction1 != auction2]
+  combs <- combs[auction1 %in% 'first_price' & auction2 %in% 'dutch']
+  l_combs <- list()
+  for(iComb in 1:nrow(combs)){
+    dt_1 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time1)]]
+    dt_1 <- dt_1[AuctionType == combs[iComb]$auction1]
+    dt_2 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time2)]]
+    dt_2 <- dt_2[AuctionType == combs[iComb]$auction2]
+    l_emotions <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      dt_1_emotion_score <- dt_1[EmotionType %in% sEmotion]
+      dt_2_emotion_score <- dt_2[EmotionType %in% sEmotion]
+      t_test <- t.test(dt_1_emotion_score$Score_num, dt_2_emotion_score$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(auction_1 = combs[iComb]$auction1,
+                             time_obs_1 = combs[iComb]$time1,
+                             auction_2 = combs[iComb]$auction2,
+                             time_obs_2 = combs[iComb]$time2,
+                             emotion = sEmotion,
+                             mean_auction_1 = t_test$estimate[1],
+                             mean_auction_2 = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      dt_tttest <- dt_ttest[,auction_1_pct_auction_2 := ((mean_auction_1-mean_auction_2)/mean_auction_2)]
+      l_emotions[[iEmotion]] <- dt_ttest
+    }
+    dt_emotions <- rbindlist(l_emotions, use.names = TRUE, fill=TRUE)
+    l_combs[[iComb]] <- dt_emotions
+  }
+  dt_combs <- rbindlist(l_combs, use.names = TRUE, fill = TRUE)
+  
+  # Create tables to plot over
+  
+  l_dt_emotions <- list()
+  for(iEmotion in 1:length(emotions)){
+    sEmotion <- emotions[iEmotion]
+    l_dt_emotions[[iEmotion]] <- dt_combs[emotion %in% sEmotion]
+    dt <- l_dt_emotions[[iEmotion]]
+    dt <- dt[order(-auction_1, time_obs_1, -auction_2, time_obs_2)]
+    dt <- dt[, pstars:='']
+    dt <- dt[p_value <= 0.01, pstars:='***']
+    dt <- dt[p_value > 0.01 & p_value <= 0.05, pstars:='**']
+    dt <- dt[p_value > 0.05 & p_value <= 0.10, pstars:='*']
+    dt <- dt[ , s_val:=paste0(round(auction_1_pct_auction_2, 3), pstars)]
+    dt <- dt[, s_val:=stringr::str_pad(s_val, 9, side='right', pad=' ')]
+    dt_cast <- dcast(dt, auction_1 + time_obs_1 ~ auction_2 + time_obs_2, value.var='s_val')
+    dt_cast <- dt_cast[, time_obs_1:=stringr::str_replace_all(time_obs_1, '(^[a-i]{1,1}\\_second)', '')]
+    new_col_names <- sapply(names(dt_cast), function(x) stringr::str_replace(x, '(^dutch\\_[a-i]{1,1}\\_second)', ''))
+    setnames(dt_cast, names(dt_cast), new_col_names)
+    dt_cast$auction_1 <- NULL
+    dt_cast$row_names <- c('$0-1$', '$1-2$', '$2-3$', '$3-4$', '$\\leq 2$' , '$\\leq 3$',  '$\\leq 4$')
+    dt_cast <- dt_cast[, .(`row_names`, `0`, `1`, `2`, `3`, `lt2`, `lt3`, `lt4`)]
+    setnames(dt_cast, 'row_names', '')
+    l_dt_emotions[[iEmotion]] <- dt_cast
+  }
+  names(l_dt_emotions) <- emotions
+  saveRDS(l_dt_emotions, '~/Dropbox/pkg.data/auction_emotions/l_dt_emotions_first.rds')
+} else {
+  l_dt_emotions <- readRDS('~/Dropbox/pkg.data/auction_emotions/l_dt_emotions_first.rds')
+  emotions <- names(l_dt_emotions)
 }
-    dt_emotion_first_two_seconds <- data.table::rbindlist(l, use.names=TRUE, fill=TRUE)
+## Latex table output
+captions_text <- ' emotional response of value allocation by time'
+captions <- paste0(emotions, captions_text)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Value Allocation: Auction Type and Time Analysis (part 1/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse2} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 1:5){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+  
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Value Allocation: Auction Type and Time Analysis (part 2/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 6:length(captions)){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+  
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent  (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+
 ```
+
+# Emotional response to the end of the auction (transition phase)
+
+```{r dt_emotions_response_results}
+dt_emotions_response_results_location <- '~/Dropbox/pkg.data/auction_emotions/l_dt_emotions_response_results.rds'
+if(!file.exists(dt_emotions_response_results_location)){
+  # Feedback (results 2 seconds or less out)
+  dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+  l_seconds_dts <- list()
+  
+  l_seconds_dts$a_second0 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 0 & !is.na(Score_num)]
+  l_seconds_dts$b_second1 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 1 & !is.na(Score_num)]
+  l_seconds_dts$c_second2 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 2 &
+                                          !is.na(Score_num)]
+  l_seconds_dts$d_second3 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 3 &
+                                          !is.na(Score_num)]
+  l_seconds_dts$f_secondlt2 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 1 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$g_secondlt3 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 2 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$h_secondlt4 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 3 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num),
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  
+  emotions <- unique(l_seconds_dts[[1]]$EmotionType)
+  auction_types <- unique(l_seconds_dts[[1]]$AuctionType)
+  combs <- expand.grid(auction_types, auction_types, names(l_seconds_dts), names(l_seconds_dts), stringsAsFactors = FALSE)
+  combs <- as.data.table(combs)
+  names(combs) <- c('auction1', 'auction2', 'time1', 'time2')
+  combs <- combs[auction1 != auction2]
+  combs <- combs[auction1 %in% 'first_price' & auction2 %in% 'dutch']
+  l_combs <- list()
+  for(iComb in 1:nrow(combs)){
+    dt_1 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time1)]]
+    dt_1 <- dt_1[AuctionType == combs[iComb]$auction1]
+    dt_2 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time2)]]
+    dt_2 <- dt_2[AuctionType == combs[iComb]$auction2]
+    l_emotions <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      dt_1_emotion_score <- dt_1[EmotionType %in% sEmotion]
+      dt_2_emotion_score <- dt_2[EmotionType %in% sEmotion]
+      t_test <- t.test(dt_1_emotion_score$Score_num, dt_2_emotion_score$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(auction_1 = combs[iComb]$auction1,
+                             time_obs_1 = combs[iComb]$time1,
+                             auction_2 = combs[iComb]$auction2,
+                             time_obs_2 = combs[iComb]$time2,
+                             emotion = sEmotion,
+                             mean_auction_1 = t_test$estimate[1],
+                             mean_auction_2 = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      dt_tttest <- dt_ttest[,auction_1_pct_auction_2 := ((mean_auction_1-mean_auction_2)/mean_auction_2)]
+      l_emotions[[iEmotion]] <- dt_ttest
+    }
+    dt_emotions <- rbindlist(l_emotions, use.names = TRUE, fill=TRUE)
+    l_combs[[iComb]] <- dt_emotions
+  }
+  dt_combs <- rbindlist(l_combs, use.names = TRUE, fill = TRUE)
+  
+  # Create tables to plot over
+  
+  l_dt_emotions <- list()
+  for(iEmotion in 1:length(emotions)){
+    sEmotion <- emotions[iEmotion]
+    l_dt_emotions[[iEmotion]] <- dt_combs[emotion %in% sEmotion]
+    dt <- l_dt_emotions[[iEmotion]]
+    dt <- dt[order(-auction_1, time_obs_1, -auction_2, time_obs_2)]
+    dt <- dt[, pstars:='']
+    dt <- dt[p_value <= 0.01, pstars:='***']
+    dt <- dt[p_value > 0.01 & p_value <= 0.05, pstars:='**']
+    dt <- dt[p_value > 0.05 & p_value <= 0.10, pstars:='*']
+    dt <- dt[ , s_val:=paste0(round(auction_1_pct_auction_2, 3), pstars)]
+    dt <- dt[, s_val:=stringr::str_pad(s_val, 9, side='right', pad=' ')]
+    dt_cast <- dcast(dt, auction_1 + time_obs_1 ~ auction_2 + time_obs_2, value.var='s_val')
+    dt_cast <- dt_cast[, time_obs_1:=stringr::str_replace_all(time_obs_1, '(^[a-i]{1,1}\\_second)', '')]
+    new_col_names <- sapply(names(dt_cast), function(x) stringr::str_replace(x, '(^dutch\\_[a-i]{1,1}\\_second)', ''))
+    setnames(dt_cast, names(dt_cast), new_col_names)
+    dt_cast$auction_1 <- NULL
+    dt_cast$row_names <- c('$0-1$', '$1-2$', '$2-3$', '$3-4$', '$\\leq 2$' , '$\\leq 3$',  '$\\leq 4$')
+    dt_cast <- dt_cast[, .(`row_names`, `0`, `1`, `2`, `3`, `lt2`, `lt3`, `lt4`)]
+    setnames(dt_cast, 'row_names', '')
+    l_dt_emotions[[iEmotion]] <- dt_cast
+  }
+  names(l_dt_emotions) <- emotions
+  saveRDS(l_dt_emotions, dt_emotions_response_results_location)
+} else {
+  l_dt_emotions <- readRDS(dt_emotions_response_results_location)
+  emotions <- names(l_dt_emotions)
+}
+## Latex table output
+captions_text <- ' emotional response of value allocation by time'
+captions <- paste0(emotions, captions_text)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 1/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse2} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 1:5){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 2/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 6:length(captions)){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent  (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+```
+
+
+
+# Emotional response to the end of the auction by winner in the money loser in the money(transition phase)
+
+## In the money by auction type
+
+```{r in_the_money_by_auction_type}
+if(!file.exists('~/Dropbox/pkg.data/auction_emotions/in_the_money.rds')){
+  dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+  dt_in_the_money <- dt_seconds[, .SD[1], by=.(participant_id, AuctionType, AuctionNumber)]
+  saveRDS(dt_in_the_money, '~/Dropbox/pkg.data/auction_emotions/in_the_money.rds')
+} else {
+  dt_in_the_money <- readRDS('~/Dropbox/pkg.data/auction_emotions/in_the_money.rds')
+  dt_spread <- dcast(dt_in_the_money, Result~AuctionType, length)
+}
+```
+
+```{r dt_emotions_in_the_money}
+dt_emotions_in_the_money_location <- '~/Dropbox/pkg.data/auction_emotions/l_dt_emotions_in_the_money.rds'
+if(!file.exists(dt_emotions_in_the_money_location)){
+  # Feedback (results 2 seconds or less out)
+  dt_seconds <- readRDS('~/Dropbox/pkg.data/auction_emotions/Clean/dt_seconds.rds')
+        
+
+  
+
+  l_seconds_dts <- list()
+
+    
+  l_seconds_dts$a_second0 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 0 & !is.na(Score_num)]
+  l_seconds_dts$b_second1 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 1 & !is.na(Score_num)]
+  l_seconds_dts$c_second2 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 2 &
+                                          !is.na(Score_num)]
+  l_seconds_dts$d_second3 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                          marker_sec_elapsed == 3 &
+                                          !is.na(Score_num)]
+  l_seconds_dts$f_secondlt2 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 1 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$g_secondlt3 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 2 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num), 
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  l_seconds_dts$h_secondlt4 <- dt_seconds[((AuctionType=='dutch' & MarkerType=='transition')|(AuctionType=='first_price' & MarkerType=='info')) &
+                                            marker_sec_elapsed <= 3 &
+                                            !is.na(Score_num)][,Score_num:=mean(Score_num),
+                                                               by=.(AuctionType, AuctionNumber, EmotionType, participant_id)]
+  
+  emotions <- unique(l_seconds_dts[[1]]$EmotionType)
+  auction_types <- unique(l_seconds_dts[[1]]$AuctionType)
+  combs <- expand.grid(auction_types, auction_types, names(l_seconds_dts), names(l_seconds_dts), stringsAsFactors = FALSE)
+  combs <- as.data.table(combs)
+  names(combs) <- c('auction1', 'auction2', 'time1', 'time2')
+  combs <- combs[auction1 != auction2]
+  combs <- combs[auction1 %in% 'first_price' & auction2 %in% 'dutch']
+  l_combs <- list()
+  for(iComb in 1:nrow(combs)){
+    dt_1 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time1)]]
+    dt_1 <- dt_1[AuctionType == combs[iComb]$auction1]
+    dt_2 <- l_seconds_dts[[which(names(l_seconds_dts)==combs[iComb]$time2)]]
+    dt_2 <- dt_2[AuctionType == combs[iComb]$auction2]
+    l_emotions <- list()
+    for(iEmotion in 1:length(emotions)){
+      sEmotion <- emotions[iEmotion]
+      dt_1_emotion_score <- dt_1[EmotionType %in% sEmotion]
+      dt_2_emotion_score <- dt_2[EmotionType %in% sEmotion]
+      t_test <- t.test(dt_1_emotion_score$Score_num, dt_2_emotion_score$Score_num, var.equal = FALSE)
+      dt_ttest <- data.table(auction_1 = combs[iComb]$auction1,
+                             time_obs_1 = combs[iComb]$time1,
+                             auction_2 = combs[iComb]$auction2,
+                             time_obs_2 = combs[iComb]$time2,
+                             emotion = sEmotion,
+                             mean_auction_1 = t_test$estimate[1],
+                             mean_auction_2 = t_test$estimate[2],
+                             t_stat = t_test$statistic,
+                             p_value = t_test$p.value)
+      dt_tttest <- dt_ttest[,auction_1_pct_auction_2 := ((mean_auction_1-mean_auction_2)/mean_auction_2)]
+      l_emotions[[iEmotion]] <- dt_ttest
+    }
+    dt_emotions <- rbindlist(l_emotions, use.names = TRUE, fill=TRUE)
+    l_combs[[iComb]] <- dt_emotions
+  }
+  dt_combs <- rbindlist(l_combs, use.names = TRUE, fill = TRUE)
+  
+  # Create tables to plot over
+  
+  l_dt_emotions <- list()
+  for(iEmotion in 1:length(emotions)){
+    sEmotion <- emotions[iEmotion]
+    l_dt_emotions[[iEmotion]] <- dt_combs[emotion %in% sEmotion]
+    dt <- l_dt_emotions[[iEmotion]]
+    dt <- dt[order(-auction_1, time_obs_1, -auction_2, time_obs_2)]
+    dt <- dt[, pstars:='']
+    dt <- dt[p_value <= 0.01, pstars:='***']
+    dt <- dt[p_value > 0.01 & p_value <= 0.05, pstars:='**']
+    dt <- dt[p_value > 0.05 & p_value <= 0.10, pstars:='*']
+    dt <- dt[ , s_val:=paste0(round(auction_1_pct_auction_2, 3), pstars)]
+    dt <- dt[, s_val:=stringr::str_pad(s_val, 9, side='right', pad=' ')]
+    dt_cast <- dcast(dt, auction_1 + time_obs_1 ~ auction_2 + time_obs_2, value.var='s_val')
+    dt_cast <- dt_cast[, time_obs_1:=stringr::str_replace_all(time_obs_1, '(^[a-i]{1,1}\\_second)', '')]
+    new_col_names <- sapply(names(dt_cast), function(x) stringr::str_replace(x, '(^dutch\\_[a-i]{1,1}\\_second)', ''))
+    setnames(dt_cast, names(dt_cast), new_col_names)
+    dt_cast$auction_1 <- NULL
+    dt_cast$row_names <- c('$0-1$', '$1-2$', '$2-3$', '$3-4$', '$\\leq 2$' , '$\\leq 3$',  '$\\leq 4$')
+    dt_cast <- dt_cast[, .(`row_names`, `0`, `1`, `2`, `3`, `lt2`, `lt3`, `lt4`)]
+    setnames(dt_cast, 'row_names', '')
+    l_dt_emotions[[iEmotion]] <- dt_cast
+  }
+  names(l_dt_emotions) <- emotions
+  saveRDS(l_dt_emotions, dt_emotions_in_the_money_location)
+} else {
+  l_dt_emotions <- readRDS(dt_emotions_in_the_money_location)
+  emotions <- names(l_dt_emotions)
+}
+## Latex table output
+captions_text <- ' emotional response of value allocation by time'
+captions <- paste0(emotions, captions_text)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 1/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse2} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 1:5){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+l_body <- NULL
+l_body <- list()
+
+l_table <- list()
+l_header_list <- as.character()
+l_header_list[1] <- '\\begin{table}[!htb] \n'
+l_header_list[2] <- '\\caption{Emotional Response to Auction Finish: Auction Type and Time Analysis (part 2/2)} \n'
+l_header_list[3] <- '\\label{tab:emotionalResponse} \n'
+l_header_list[4] <- '\\centering \n'
+l_header_list[5] <- '\\begingroup \n'
+l_header_list[6] <- '\\scriptsize \n'
+l_header_list[7] <- '\\begin{tabular}{lrrrrrrr} \n'
+l_header_list[8] <- '\\toprule'
+l_header_list[9] <- '\\emph{First Price} & \\multicolumn{7}{c}{\\emph{Dutch}} \\\\ \n'
+l_header_list[10] <- '\\cmidrule(lr){2-8} \n & $0-1$ & $1-2$ & $2-3$ & $3-4$ & $\\leq 2$ & $\\leq 3$ & $\\leq 4$ \\\\ \n'  
+
+l_table$header <- l_header_list
+
+l_body <- list()
+for(i in 6:length(captions)){
+  body_header <- character()
+  body_header[1] <- '\\cmidrule(lr){2-8} \n'
+  body_header[2] <- paste0('& \\multicolumn{7}{c}{\\emph{Panel ', stringr::str_to_upper(letters[i]),
+                           ': ', emotions[i], '}}\\\\ \n')
+  body_header[3] <- '\\cmidrule(lr){1-1} \\cmidrule(lr){2-8}'
+  
+  body <- character()
+  body <- print.xtable(xtable(l_dt_emotions[[i]], format='latex'), include.rownames=FALSE, sep='\n', print.results = FALSE)
+  body <- as.character(stringr::str_split(body, '\\n', simplify = FALSE)[[1]])
+  body <- body[c(9:15)]
+  body <- stringr::str_replace_all(body, '\\\\(?=\\$)', '')
+  body <- stringr::str_replace_all(body, '.+(?=leq)', '$\\\\')
+  l_body[[i]] <- c(body_header, body)
+}
+
+l_table$body <- l_body  
+
+body_footer <- character()
+body_footer[1] <- '\\bottomrule \n'
+body_footer[2] <- '\\end{tabular} \n'
+body_footer[3] <- '\\begin{minipage}{\\textwidth}'
+body_footer[4] <- '\\footnotesize'
+body_footer[5] <- '\\vspace{0.25cm}'
+body_footer[6] <- '\\emph{Notes:} Table Values represent  (mean(first price emotion score)-mean(dutch emotion score))/mean(dutch emotion score). ***, **, *, for p-values of 0.01, 0.05, 0.10 for the hypothesis test that mean(first price emotion score)=mean(dutch emotion score)'
+body_footer[7] <- '\\end{minipage}'
+body_footer[8] <- '\\endgroup'
+body_footer[9] <- '\\end{table}'
+
+l_table$body_footer <- body_footer
+table_out <- unlist(l_table)
+knitr::raw_latex(table_out)
+
+```
+
+
